@@ -76,7 +76,6 @@
                 });
                 const data = await response.json();
                 
-                // Simple parser for the AI response
                 const text = data.listing;
                 document.getElementById('resTitle').innerText = text.match(/TITLE:\s*(.*)/i)?.[1] || "See description";
                 document.getElementById('resPrice').innerText = text.match(/PRICE ESTIMATE:\s*(.*)/i)?.[1] || "Market rate";
