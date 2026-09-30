@@ -3,7 +3,8 @@ import stripe
 from fastapi import FastAPI, Request, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from supabase import create_client, Client
 
 # Initialize app
@@ -33,8 +34,10 @@ if SUPABASE_URL and SUPABASE_KEY:
 if STRIPE_SECRET_KEY:
     stripe.api_key = STRIPE_SECRET_KEY
 
+# Initialize the new Gemini Client
+gemini_client = None
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
@@ -46,16 +49,21 @@ async def serve_frontend():
 
 @app.post("/api/generate-listing")
 async def generate_listing(image: UploadFile = File(...)):
-    if not GEMINI_API_KEY:
+    if not gemini_client:
         raise HTTPException(status_code=500, detail="Gemini API Key missing")
     
     try:
         image_data = await image.read()
-        model = genai.GenerativeModel('gemini-1.5-flash')
         prompt = "Analyze this product image. Provide a JSON response with 'title', 'price' (estimated fair market value), and a detailed 'description' for an online marketplace listing."
         
-        image_parts = [{"mime_type": image.content_type, "data": image_data}]
-        response = model.generate_content([prompt, image_parts[0]])
+        # New SDK syntax for generating content with an image
+        response = gemini_client.models.generate_content(
+            model='gemini-1.5-flash',
+            contents=[
+                prompt,
+                types.Part.from_bytes(data=image_data, mime_type=image.content_type)
+            ]
+        )
         
         return JSONResponse(content={"result": response.text})
         
