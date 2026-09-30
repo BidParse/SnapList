@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import HTMLResponse
 from google import genai
@@ -49,7 +48,7 @@ async def generate_listing(image_file: UploadFile = File(...)):
         """
         
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3.8-flash",
             contents=[image, prompt]
         )
         
