@@ -19,7 +19,6 @@ async def generate_listing(image_file: UploadFile = File(...)):
         image_data = await image_file.read()
         image = Image.open(io.BytesIO(image_data))
         
-        # Convert any format (WEBP, PNG, CMYK, etc.) to standard RGB JPEG-compatible format
         if image.mode in ("RGBA", "P"):
             image = image.convert("RGB")
         elif image.mode != "RGB":
@@ -50,7 +49,7 @@ async def generate_listing(image_file: UploadFile = File(...)):
         """
         
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             contents=[image, prompt]
         )
         
