@@ -24,7 +24,7 @@ async def generate_listing(image_file: UploadFile = File(...)):
             image = image.convert("RGB")
             
         prompt = """
-        You are an expert multi-channel e-commerce seller. Analyze this image and generate optimized listings for four different platforms:
+        You are an expert multi-channel e-commerce seller. Analyze this image and generate optimized listings for seven major platforms:
         
         EBAY:
         TITLE: [SEO keyword-rich title under 80 chars]
@@ -45,6 +45,21 @@ async def generate_listing(image_file: UploadFile = File(...)):
         TITLE: [Clean searchable title]
         PRICE: [Competitive price]
         DESC: [Bullet-point details and shipping note]
+
+        DEPOP:
+        TITLE: [Vibe-driven streetwear/vintage title with aesthetic tags]
+        PRICE: [Target price]
+        DESC: [Trendy description with style keywords, sizing, and bundle notes]
+
+        GRAILED:
+        TITLE: [Brand, item name, and condition format]
+        PRICE: [Market value for menswear/designer/sneakers]
+        DESC: [Detailed designer/streetwear description, measurements note, and shipping terms]
+
+        VINTED:
+        TITLE: [Clear item title with brand and size]
+        PRICE: [Affordable resale price]
+        DESC: [Detailed description with condition, material, and Vinted-style hashtags]
         """
         
         response = client.models.generate_content(
