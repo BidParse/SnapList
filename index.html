@@ -22,12 +22,20 @@
         <!-- Form Area -->
         <div class="p-6 flex-1 flex flex-col space-y-6">
             <form id="uploadForm" class="space-y-4">
-                <div class="w-full bg-gray-800/80 rounded-2xl p-6 border border-purple-500/30 flex flex-col items-center justify-center relative shadow-inner min-h-[160px]">
-                    <svg class="w-12 h-12 text-purple-400 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    <span class="text-sm text-gray-300 font-medium">Upload Product Photo</span>
+                <div class="w-full bg-gray-800/80 rounded-2xl p-4 border border-purple-500/30 flex flex-col items-center justify-center relative shadow-inner min-h-[160px]">
+                    <!-- Image Preview Thumbnail -->
+                    <img id="imagePreview" class="hidden w-full h-40 object-cover rounded-xl mb-2 border border-purple-500/50" alt="Product Preview">
+                    
+                    <!-- Default Upload Prompt -->
+                    <div id="uploadPlaceholder" class="flex flex-col items-center justify-center py-4">
+                        <svg class="w-12 h-12 text-purple-400 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span class="text-sm text-gray-300 font-medium">Upload Product Photo</span>
+                        <span id="fileName" class="text-xs text-purple-400 mt-1"></span>
+                    </div>
+
                     <input type="file" id="imageInput" accept="image/*" required class="absolute inset-0 opacity-0 cursor-pointer">
                 </div>
                 <button type="submit" id="submitBtn" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3.5 px-4 rounded-xl shadow-lg transition duration-200">
@@ -89,13 +97,27 @@
         };
 
         const form = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+        const fileName = document.getElementById('fileName');
         const loading = document.getElementById('loading');
         const resultContainer = document.getElementById('resultContainer');
         const submitBtn = document.getElementById('submitBtn');
 
+        // Instant Preview Trigger on File Selection
+        fileInput.addEventListener('change', (e) => {
+            if (fileInput.files.length === 0) return;
+            const file = fileInput.files[0];
+            
+            imagePreview.src = URL.createObjectURL(file);
+            imagePreview.classList.remove('hidden');
+            uploadPlaceholder.classList.add('hidden');
+            fileName.innerText = file.name;
+        });
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const fileInput = document.getElementById('imageInput');
             if (fileInput.files.length === 0) return;
 
             const formData = new FormData();
