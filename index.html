@@ -1,123 +1,189 @@
-import os
-import stripe
-from fastapi import FastAPI, Request, HTTPException, UploadFile, File
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from google import genai
-from google.genai import types
-from supabase import create_client, Client
-
-# Initialize app
-app = FastAPI()
-
-# Enable CORS so your frontend can talk to your backend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Load Environment Variables from Render
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
-STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
-STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-# Initialize Services
-supabase: Client = None
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-if STRIPE_SECRET_KEY:
-    stripe.api_key = STRIPE_SECRET_KEY
-
-# Initialize the new Gemini Client
-gemini_client = None
-if GEMINI_API_KEY:
-    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-
-@app.get("/", response_class=HTMLResponse)
-async def serve_frontend():
-    try:
-        with open("index.html", "r") as f:
-            return f.read()
-    except FileNotFoundError:
-        return "<html><body><h1>index.html not found. Make sure it is in your GitHub repo.</h1></body></html>"
-
-@app.post("/api/generate-listing")
-async def generate_listing(image: UploadFile = File(...)):
-    if not gemini_client:
-        raise HTTPException(status_code=500, detail="Gemini API Key missing")
-    
-    try:
-        image_data = await image.read()
-        prompt = "Analyze this product image. Provide a JSON response with 'title', 'price' (estimated fair market value), and a detailed 'description' for an online marketplace listing."
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimplyList</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-black text-white p-8 font-sans min-h-screen flex flex-col items-center">
+    <div class="w-full max-w-2xl bg-[#111111] border border-purple-900 p-10 rounded-xl shadow-[0_0_20px_rgba(128,0,128,0.3)]">
         
-        # New SDK syntax for generating content with an image
-        response = gemini_client.models.generate_content(
-            model='gemini-1.5-pro',
-            contents=[
-                prompt,
-                types.Part.from_bytes(data=image_data, mime_type=image.content_type)
-            ]
-        )
+        <div class="text-center mb-10">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-16 h-16 mx-auto mb-4 text-purple-500">
+              <path d="M12 9a3.75 3.75 0 1 0 0 7.5A3.75 3.75 0 0 0 12 9Z" />
+              <path fill-rule="evenodd" d="M9.344 3.071a49.52 49.52 0 0 1 5.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 0 1-3 3h-15a3 3 0 0 1-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 0 0 1.11-.71l.822-1.315a2.942 2.942 0 0 1 2.332-1.39ZM6.75 12.75a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0Zm12-1.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
+            </svg>
+            <h1 class="text-5xl font-black tracking-widest text-white uppercase">Simply<span class="text-purple-500">List</span></h1>
+            <p class="text-sm text-[#C0C0C0] mt-2 tracking-widest uppercase">AI Marketplace Generator</p>
+        </div>
+
+        <div id="auth-section" class="mb-8 pb-8 border-b border-purple-900/50">
+            <h2 class="text-xl mb-4 font-bold text-purple-400 uppercase tracking-wide">Account Access</h2>
+            <input type="email" id="email" placeholder="Email Address" class="bg-black border border-purple-800 text-white p-4 w-full mb-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
+            <input type="password" id="password" placeholder="Password" class="bg-black border border-purple-800 text-white p-4 w-full mb-6 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
+            <div class="flex gap-4">
+                <button onclick="login()" class="bg-purple-600 text-white font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-500 transition-colors duration-200">Login</button>
+                <button onclick="signUp()" class="bg-black border border-purple-600 text-purple-500 font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-900/30 transition-colors duration-200">Sign Up</button>
+            </div>
+            <p id="auth-message" class="mt-5 text-sm text-center font-bold"></p>
+        </div>
+
+        <div id="app-section" class="hidden">
+            <div class="flex justify-between items-center mb-8 bg-black p-4 rounded-md border border-purple-900/50">
+                <p class="text-sm text-[#C0C0C0]">USER: <span id="user-email" class="font-bold text-purple-400 tracking-wide"></span></p>
+                <button onclick="logout()" class="text-[#C0C0C0] text-sm font-bold uppercase hover:text-white transition-colors">Logout</button>
+            </div>
+
+            <div class="mb-10 p-6 bg-gradient-to-r from-purple-900/40 to-black border border-purple-700 rounded-md flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <h3 class="font-black text-xl text-white uppercase tracking-wider">SimplyList <span class="text-purple-400">Pro</span></h3>
+                    <p class="text-sm text-[#C0C0C0] mt-1">Unlock unlimited AI generations.</p>
+                </div>
+                <button onclick="checkout()" class="bg-white text-black px-6 py-3 rounded-md font-black uppercase tracking-wider hover:bg-[#C0C0C0] transition-colors whitespace-nowrap">Upgrade - $9.99</button>
+            </div>
+
+            <div>
+                <h2 class="text-xl mb-4 font-bold text-purple-400 uppercase tracking-wide">New Listing</h2>
+                <div class="border-2 border-dashed border-purple-700 hover:border-purple-400 transition-colors bg-black p-10 text-center rounded-md mb-6">
+                    <input type="file" id="image-upload" accept="image/*" class="w-full cursor-pointer text-[#C0C0C0] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-purple-900 file:text-white hover:file:bg-purple-700 transition-colors">
+                </div>
+                <button onclick="generateListing()" class="bg-purple-600 text-white px-4 py-4 rounded-md w-full font-black text-lg uppercase tracking-wider hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(128,0,128,0.4)]">Generate AI Listing</button>
+            </div>
+
+            <div id="result" class="mt-8 p-6 border border-purple-800 rounded-md bg-black hidden whitespace-pre-wrap text-white font-mono text-sm shadow-inner leading-relaxed">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://wzmaaahyovsroeyjsmst.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_7HpG3z67MVak6k9csFWmKQ_7MLqrMyP'; 
         
-        return JSONResponse(content={"result": response.text})
-        
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let currentUser = null;
 
-@app.post("/api/checkout")
-async def create_checkout_session(request: Request):
-    try:
-        data = await request.json()
-        user_id = data.get("user_id", "guest")
+        async function checkUser() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('app-section').classList.remove('hidden');
+                document.getElementById('user-email').innerText = currentUser.email;
+            } else {
+                currentUser = null;
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('app-section').classList.add('hidden');
+            }
+        }
 
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {'name': 'SimplyList Pro'},
-                    'unit_amount': 999, # $9.99
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            success_url=str(request.base_url) + "?success=true",
-            cancel_url=str(request.base_url) + "?canceled=true",
-            client_reference_id=user_id # Passes the user ID to the webhook
-        )
-        return {"url": session.url}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        async function signUp() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('auth-message');
+            
+            if (!email || !password) {
+                messageEl.innerText = "Please enter an email and password.";
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500";
+                return;
+            }
 
-@app.post("/api/webhook/stripe")
-async def stripe_webhook(request: Request):
-    payload = await request.body()
-    sig_header = request.headers.get("stripe-signature")
+            messageEl.innerText = "SIGNING UP...";
+            messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
+            
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+            
+            if (error) {
+                messageEl.innerText = error.message.toUpperCase();
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
+            } else {
+                messageEl.innerText = "SUCCESS! PLEASE LOG IN.";
+                messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
+            }
+        }
 
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, STRIPE_WEBHOOK_SECRET
-        )
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid payload")
-    except stripe.error.SignatureVerificationError:
-        raise HTTPException(status_code=400, detail="Invalid signature")
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('auth-message');
+            
+            if (!email || !password) {
+                messageEl.innerText = "Please enter an email and password.";
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500";
+                return;
+            }
 
-    # If payment is successful, upgrade the user in Supabase
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        user_id = session.get("client_reference_id")
+            messageEl.innerText = "LOGGING IN...";
+            messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
+            
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            
+            if (error) {
+                messageEl.innerText = error.message.toUpperCase();
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
+            } else {
+                messageEl.innerText = "";
+                checkUser();
+            }
+        }
 
-        if user_id and user_id != "guest" and supabase:
-            try:
-                supabase.table("profiles").update({"is_pro": True}).eq("id", user_id).execute()
-            except Exception as db_error:
-                print("Supabase update error:", db_error)
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            checkUser();
+        }
 
-    return {"status": "success"}
+        async function checkout() {
+            if (!currentUser) return alert("Please log in first!");
+            try {
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUser.id })
+                });
+                const data = await response.json();
+                if (data.url) {
+                    window.location.href = data.url; 
+                } else {
+                    alert("Error starting checkout: " + (data.detail || "Unknown error"));
+                }
+            } catch (err) {
+                alert("Payment system unavailable right now.");
+            }
+        }
+
+        async function generateListing() {
+            const fileInput = document.getElementById('image-upload');
+            const resultBox = document.getElementById('result');
+            
+            if (!fileInput.files.length) {
+                return alert("Please select an image first!");
+            }
+            
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            resultBox.classList.remove('hidden');
+            resultBox.innerText = "ANALYZING IMAGE AND WRITING LISTING... ⏳";
+
+            try {
+                const response = await fetch('/api/generate-listing', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.result) {
+                    resultBox.innerText = data.result;
+                } else {
+                    resultBox.innerText = "ERROR: " + JSON.stringify(data.error);
+                }
+            } catch (e) {
+                resultBox.innerText = "A CONNECTION ERROR OCCURRED.";
+            }
+        }
+
+        checkUser();
+    </script>
+</body>
+</html>
