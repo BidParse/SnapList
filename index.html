@@ -64,6 +64,11 @@
                         <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Description</label>
                         <div id="resDesc" class="bg-gray-800 p-2.5 rounded-lg text-gray-300 text-xs select-all whitespace-pre-wrap border border-gray-700 max-h-32 overflow-y-auto"></div>
                     </div>
+
+                    <!-- Direct Action / Post Button -->
+                    <button id="postBtn" onclick="openPlatformListing()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-200 text-sm flex items-center justify-center space-x-2">
+                        <span>Copy & Open Platform to List</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -72,6 +77,16 @@
     <script>
         let parsedData = { ebay: {}, poshmark: {}, facebook: {}, mercari: {}, depop: {}, grailed: {}, vinted: {} };
         let currentPlatform = 'ebay';
+
+        const platformUrls = {
+            ebay: 'https://www.ebay.com/sl/sell',
+            poshmark: 'https://poshmark.com/create-listing',
+            facebook: 'https://www.facebook.com/marketplace/create/item',
+            mercari: 'https://www.mercari.com/sell/',
+            depop: 'https://www.depop.com/products/create/',
+            grailed: 'https://www.grailed.com/listings/new',
+            vinted: 'https://www.vinted.com/items/new'
+        };
 
         const form = document.getElementById('uploadForm');
         const loading = document.getElementById('loading');
@@ -136,6 +151,19 @@
             document.getElementById('resTitle').innerText = parsedData[plat].title;
             document.getElementById('resPrice').innerText = parsedData[plat].price;
             document.getElementById('resDesc').innerText = parsedData[plat].desc;
+            document.getElementById('postBtn').innerText = `Copy & Open ${plat.toUpperCase()} to List`;
+        }
+
+        function openPlatformListing() {
+            const current = parsedData[currentPlatform];
+            const payload = `Title: ${current.title}\nPrice: ${current.price}\n\nDescription:\n${current.desc}`;
+            
+            navigator.clipboard.writeText(payload).then(() => {
+                alert(`Copied ${currentPlatform.toUpperCase()} listing to clipboard! Opening ${currentPlatform.toUpperCase()}...`);
+                window.open(platformUrls[currentPlatform], '_blank');
+            }).catch(err => {
+                alert('Failed to copy text. Please select and copy manually.');
+            });
         }
     </script>
 </body>
