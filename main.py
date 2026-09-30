@@ -58,7 +58,7 @@ async def generate_listing(image: UploadFile = File(...)):
         
         # New SDK syntax for generating content with an image
         response = gemini_client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-1.5-pro',
             contents=[
                 prompt,
                 types.Part.from_bytes(data=image_data, mime_type=image.content_type)
@@ -81,7 +81,7 @@ async def create_checkout_session(request: Request):
             line_items=[{
                 'price_data': {
                     'currency': 'usd',
-                    'product_data': {'name': 'SnapList Pro'},
+                    'product_data': {'name': 'SimplyList Pro'},
                     'unit_amount': 999, # $9.99
                 },
                 'quantity': 1,
