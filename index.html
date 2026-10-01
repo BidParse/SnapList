@@ -10,10 +10,11 @@
 <body class="bg-black text-white p-8 font-sans min-h-screen flex flex-col items-center">
     <div class="w-full max-w-2xl bg-[#111111] border border-purple-900 p-10 rounded-xl shadow-[0_0_20px_rgba(128,0,128,0.3)]">
         
-        <!-- Custom Logo Image with Blend Magic -->
+        <!-- Custom Logo Image (Stockdale Colors & Seamless Blend) -->
         <div class="text-center mb-10">
-            <img src="logo.png" alt="SimpleList Logo" class="h-56 mx-auto object-contain invert contrast-125 mix-blend-screen">
-            <p class="text-sm text-[#C0C0C0] mt-4 tracking-widest uppercase">AI Marketplace Generator</p>
+            <!-- The invert filter flips the light background to black and the text to silver. The hue-rotate turns the bronze into Stockdale purple! -->
+            <img src="logo.png" alt="SimpleList Logo" class="h-64 mx-auto object-contain mix-blend-screen" style="filter: invert(1) hue-rotate(50deg) saturate(1.5) contrast(1.2);">
+            <p class="text-sm text-[#C0C0C0] mt-0 tracking-widest uppercase">AI Marketplace Generator</p>
         </div>
 
         <div id="auth-section" class="mb-8 pb-8 border-b border-purple-900/50">
