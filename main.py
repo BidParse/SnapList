@@ -1,7 +1,7 @@
 import os
 import stripe
 from fastapi import FastAPI, Request, HTTPException, UploadFile, File
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 from google.genai import types
@@ -47,6 +47,12 @@ async def serve_frontend():
     except FileNotFoundError:
         return "<html><body><h1>index.html not found. Make sure it is in your GitHub repo.</h1></body></html>"
 
+@app.get("/logo.png")
+async def serve_logo():
+    if os.path.exists("logo.png"):
+        return FileResponse("logo.png")
+    return HTMLResponse(status_code=404, content="Logo not found")
+
 @app.post("/api/generate-listing")
 async def generate_listing(image: UploadFile = File(...)):
     if not gemini_client:
@@ -56,9 +62,9 @@ async def generate_listing(image: UploadFile = File(...)):
         image_data = await image.read()
         prompt = "Analyze this product image. Provide a JSON response with 'title', 'price' (estimated fair market value), and a detailed 'description' for an online marketplace listing."
         
-        # New SDK syntax for generating content with an image
+        # Use the current 2.5-flash model
         response = gemini_client.models.generate_content(
-            model='gemini-1.5-pro',
+            model='gemini-2.5-flash',
             contents=[
                 prompt,
                 types.Part.from_bytes(data=image_data, mime_type=image.content_type)
@@ -81,7 +87,7 @@ async def create_checkout_session(request: Request):
             line_items=[{
                 'price_data': {
                     'currency': 'usd',
-                    'product_data': {'name': 'SimplyList Pro'},
+                    'product_data': {'name': 'SimpleList Pro'},
                     'unit_amount': 999, # $9.99
                 },
                 'quantity': 1,
