@@ -10,15 +10,9 @@
 <body class="bg-black text-white p-8 font-sans min-h-screen flex flex-col items-center">
     <div class="w-full max-w-2xl bg-[#111111] border border-purple-900 p-10 rounded-xl shadow-[0_0_20px_rgba(128,0,128,0.3)]">
         
-        <!-- Custom Header exactly like your mockup -->
         <div class="text-center mb-10">
-            <!-- SimpleList Text -->
             <h1 class="text-6xl font-black tracking-wide mb-6"><span class="text-purple-600">Simple</span><span class="text-white">List</span></h1>
-            
-            <!-- Purple Camera Image (No weird filters!) -->
             <img src="logo.png" alt="SimpleList Logo" class="h-40 mx-auto object-contain drop-shadow-[0_0_15px_rgba(147,51,234,0.3)]">
-            
-            <!-- Subtitle -->
             <p class="text-sm text-[#C0C0C0] mt-6 tracking-widest uppercase">AI Marketplace Generator</p>
         </div>
 
@@ -55,7 +49,8 @@
                 <button onclick="generateListing()" class="bg-purple-600 text-white px-4 py-4 rounded-md w-full font-black text-lg uppercase tracking-wider hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(128,0,128,0.4)]">Generate AI Listing</button>
             </div>
 
-            <div id="result" class="mt-8 p-6 border border-purple-800 rounded-md bg-black hidden whitespace-pre-wrap text-white font-mono text-sm shadow-inner leading-relaxed">
+            <div id="result" class="mt-8 p-6 border border-purple-800 rounded-md bg-black hidden text-white shadow-inner leading-relaxed">
+                <!-- Rich formatting gets injected here -->
             </div>
         </div>
     </div>
@@ -82,111 +77,146 @@
         }
 
         async function signUp() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const messageEl = document.getElementById('auth-message');
-            
-            if (!email || !password) {
-                messageEl.innerText = "Please enter an email and password.";
-                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500";
-                return;
-            }
+            constThe reason it feels a bit basic right now is because we only gave the AI a barebones set of instructions just to make sure the connection was actually working. 
 
-            messageEl.innerText = "SIGNING UP...";
-            messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
-            
-            const { data, error } = await supabaseClient.auth.signUp({ email, password });
-            
-            if (error) {
-                messageEl.innerText = error.message.toUpperCase();
-                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
-            } else {
-                messageEl.innerText = "SUCCESS! PLEASE LOG IN.";
-                messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
-            }
-        }
+To make SimpleList the absolute best listing app available, we need to turn the AI from a simple "image describer" into an expert e-commerce copywriter and appraiser. We can do this by injecting a "Super Prompt" into your backend that forces it to generate a catchy title, market value, a sales-driven description, bulleted features, and SEO tags.
 
-        async function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const messageEl = document.getElementById('auth-message');
-            
-            if (!email || !password) {
-                messageEl.innerText = "Please enter an email and password.";
-                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500";
-                return;
-            }
+Open your **`main.py`** file in GitHub, delete everything, and paste this upgraded version:
 
-            messageEl.innerText = "LOGGING IN...";
-            messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
-            
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            
-            if (error) {
-                messageEl.innerText = error.message.toUpperCase();
-                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
-            } else {
-                messageEl.innerText = "";
-                checkUser();
-            }
-        }
+```python
+import os
+import stripe
+from fastapi import FastAPI, Request, HTTPException, UploadFile, File
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+from google import genai
+from google.genai import types
+from supabase import create_client, Client
 
-        async function logout() {
-            await supabaseClient.auth.signOut();
-            checkUser();
-        }
+# Initialize app
+app = FastAPI()
 
-        async function checkout() {
-            if (!currentUser) return alert("Please log in first!");
-            try {
-                const response = await fetch('/api/checkout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUser.id })
-                });
-                const data = await response.json();
-                if (data.url) {
-                    window.location.href = data.url; 
-                } else {
-                    alert("Error starting checkout: " + (data.detail || "Unknown error"));
-                }
-            } catch (err) {
-                alert("Payment system unavailable right now.");
-            }
-        }
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-        async function generateListing() {
-            const fileInput = document.getElementById('image-upload');
-            const resultBox = document.getElementById('result');
-            
-            if (!fileInput.files.length) {
-                return alert("Please select an image first!");
-            }
-            
-            const formData = new FormData();
-            formData.append('image', fileInput.files[0]);
+# Load Environment Variables
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-            resultBox.classList.remove('hidden');
-            resultBox.innerText = "ANALYZING IMAGE AND WRITING LISTING... ⏳";
+# Initialize Services
+supabase: Client = None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-            try {
-                const response = await fetch('/api/generate-listing', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
-                
-                if (data.result) {
-                    resultBox.innerText = data.result;
-                } else {
-                    resultBox.innerText = "ERROR: " + JSON.stringify(data.error);
-                }
-            } catch (e) {
-                resultBox.innerText = "A CONNECTION ERROR OCCURRED.";
-            }
-        }
+if STRIPE_SECRET_KEY:
+    stripe.api_key = STRIPE_SECRET_KEY
 
-        checkUser();
-    </script>
-</body>
-</html>
+gemini_client = None
+if GEMINI_API_KEY:
+    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+
+@app.get("/", response_class=HTMLResponse)
+async def serve_frontend():
+    try:
+        with open("index.html", "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        return "<html><body><h1>index.html not found.</h1></body></html>"
+
+@app.get("/logo.png")
+async def serve_logo():
+    if os.path.exists("logo.png"):
+        return FileResponse("logo.png")
+    return HTMLResponse(status_code=404, content="Logo not found")
+
+@app.post("/api/generate-listing")
+async def generate_listing(image: UploadFile = File(...)):
+    if not gemini_client:
+        raise HTTPException(status_code=500, detail="Gemini API Key missing")
+    
+    try:
+        image_data = await image.read()
+        
+        # The Master E-Commerce Super Prompt
+        prompt = """You are an expert e-commerce copywriter, appraiser, and SEO specialist. Analyze this product image and generate a premium, ready-to-post marketplace listing that will sell quickly.
+
+        Format the response perfectly so the user can copy and paste it directly. Include:
+        
+        🏷️ TITLE: A catchy, highly-searchable SEO title (include brand/style if identifiable).
+        💰 FAIR MARKET VALUE: A realistic estimated price range based on the secondhand market.
+        📝 DESCRIPTION: A highly engaging, persuasive, and detailed sales description. Write it as if you are trying to make a sale today.
+        ✨ FEATURES & DETAILS: 3-5 bullet points outlining the visible condition, material, or standout features.
+        🔍 SEO TAGS: 10-15 comma-separated keywords perfect for eBay, Facebook Marketplace, or Poshmark algorithms.
+        """
+        
+        response = gemini_client.models.generate_content(
+            model='gemini-3.8-flash',
+            contents=[
+                prompt,
+                types.Part.from_bytes(data=image_data, mime_type=image.content_type)
+            ]
+        )
+        
+        return JSONResponse(content={"result": response.text})
+        
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+@app.post("/api/checkout")
+async def create_checkout_session(request: Request):
+    try:
+        data = await request.json()
+        user_id = data.get("user_id", "guest")
+
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {'name': 'SimpleList Pro'},
+                    'unit_amount': 999,
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=str(request.base_url) + "?success=true",
+            cancel_url=str(request.base_url) + "?canceled=true",
+            client_reference_id=user_id
+        )
+        return {"url": session.url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/webhook/stripe")
+async def stripe_webhook(request: Request):
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid payload")
+    except stripe.error.SignatureVerificationError:
+        raise HTTPException(status_code=400, detail="Invalid signature")
+
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        user_id = session.get("client_reference_id")
+
+        if user_id and user_id != "guest" and supabase:
+            try:
+                supabase.table("profiles").update({"is_pro": True}).eq("id", user_id).execute()
+            except Exception as db_error:
+                print("Supabase update error:", db_error)
+
+    return {"status": "success"}
