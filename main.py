@@ -62,9 +62,9 @@ async def generate_listing(image: UploadFile = File(...)):
         image_data = await image.read()
         prompt = "Analyze this product image. Provide a JSON response with 'title', 'price' (estimated fair market value), and a detailed 'description' for an online marketplace listing."
         
-        # Use the current 2.5-flash model
+        # Updated model to gemini-3.8-flash
         response = gemini_client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-3.8-flash',
             contents=[
                 prompt,
                 types.Part.from_bytes(data=image_data, mime_type=image.content_type)
@@ -95,7 +95,7 @@ async def create_checkout_session(request: Request):
             mode='payment',
             success_url=str(request.base_url) + "?success=true",
             cancel_url=str(request.base_url) + "?canceled=true",
-            client_reference_id=user_id # Passes the user ID to the webhook
+            client_reference_id=user_id
         )
         return {"url": session.url}
     except Exception as e:
@@ -115,7 +115,6 @@ async def stripe_webhook(request: Request):
     except stripe.error.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Invalid signature")
 
-    # If payment is successful, upgrade the user in Supabase
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
         user_id = session.get("client_reference_id")
