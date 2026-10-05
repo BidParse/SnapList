@@ -61,7 +61,10 @@
                 <button onclick="generateListing()" class="bg-purple-600 text-white px-4 py-4 rounded-md w-full font-black text-lg uppercase tracking-wider hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(128,0,128,0.4)]">Generate AI Listing</button>
             </div>
 
-            <div id="result" class="mt-8 p-6 border border-purple-800 rounded-md bg-black hidden whitespace-pre-wrap text-white font-mono text-sm shadow-inner leading-relaxed">
+            <!-- Output Container -->
+            <div id="result-container" class="mt-8 hidden flex-col gap-4">
+                <div id="result" class="p-6 border border-purple-800 rounded-md bg-black whitespace-pre-wrap text-white font-mono text-sm shadow-inner leading-relaxed"></div>
+                <button id="copy-btn" onclick="copyToClipboard()" class="hidden bg-white text-black px-4 py-4 rounded-md w-full font-black text-lg uppercase tracking-wider hover:bg-gray-300 transition-colors shadow-[0_0_15px_rgba(255,255,255,0.2)]">📋 Copy Listing</button>
             </div>
         </div>
     </div>
@@ -89,40 +92,161 @@
 
         async function signUp() {
             const email = document.getElementById('email').value;
-            const password = documentI am so sorry for the loop! I kept re-sending the website files and completely forgot to give you the database fix you actually asked for.
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('auth-message');
+            
+            if (!email || !password) {
+                messageEl.innerText = "Please enter an email and password.";
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500";
+                return;
+            }
 
-Here is the exact **SQL code** for your **Supabase SQL Editor** to fix that `null value in column "email"` error. 
+            messageEl.innerText = "SIGNING UP...";
+            messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
+            
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+            
+            if (error) {
+                messageEl.innerText = error.message.toUpperCase();
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
+            } else {
+                messageEl.innerText = "SUCCESS! PLEASE LOG IN.";
+                messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
+            }
+        }
 
-Highlight everything in the Supabase SQL Editor, delete it, and paste this:
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('auth-message');
+            
+            if (!email || !password) {
+                messageEl.innerText = "Please enter an email and password.";
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500";
+                return;
+            }
 
-```sql
--- Add our tracking columns to your existing table
-alter table public.profiles
-add column if not exists is_pro boolean default false,
-add column if not exists generation_count integer default 0;
+            messageEl.innerText = "LOGGING IN...";
+            messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
+            
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            
+            if (error) {
+                messageEl.innerText = error.message.toUpperCase();
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
+            } else {
+                messageEl.innerText = "";
+                checkUser();
+            }
+        }
 
--- Set up the trigger function to handle new signups safely (Now including the email!)
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer set search_path = public
-as $$
-begin
-  insert into public.profiles (id, email)
-  values (new.id, new.email)
-  on conflict (id) do nothing;
-  return new;
-end;
-$$;
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            checkUser();
+        }
 
--- Refresh the trigger
-drop trigger if exists on_auth_user_created on auth.users;
+        async function checkout() {
+            if (!currentUser) return alert("Please log in first!");
+            try {
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUser.id })
+                });
+                const data = await response.json();
+                if (data.url) {
+                    window.location.href = data.url; 
+                } else {
+                    alert("Error starting checkout: " + (data.detail || "Unknown error"));
+                }
+            } catch (err) {
+                alert("Payment system unavailable right now.");
+            }
+        }
 
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const output = document.getElementById('image-preview');
+                output.src = reader.result;
+                output.classList.remove('hidden');
+            };
+            if (event.target.files[0]) {
+                reader.readAsDataURL(event.target.files[0]);
+            }
+        }
 
--- Retroactively create trackers for any accounts you already made while testing (Now including the email!)
-insert into public.profiles (id, email)
-select id, email from auth.users
-on conflict (id) do nothing;
+        // NEW: 1-Click Copy Function
+        function copyToClipboard() {
+            const textToCopy = document.getElementById('result').innerText;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const copyBtn = document.getElementById('copy-btn');
+                const originalText = copyBtn.innerHTML;
+                
+                // Visual feedback that it worked
+                copyBtn.innerHTML = '✅ COPIED!';
+                copyBtn.classList.remove('bg-white', 'text-black', 'hover:bg-gray-300');
+                copyBtn.classList.add('bg-green-500', 'text-white', 'hover:bg-green-400');
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.classList.add('bg-white', 'text-black', 'hover:bg-gray-300');
+                    copyBtn.classList.remove('bg-green-500', 'text-white', 'hover:bg-green-400');
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy text: ', err);
+            });
+        }
+
+        async function generateListing() {
+            if (!currentUser) {
+                alert("Please log in to generate a listing!");
+                return;
+            }
+
+            const fileInput = document.getElementById('image-upload');
+            const categorySelect = document.getElementById('category-select');
+            const resultContainer = document.getElementById('result-container');
+            const resultBox = document.getElementById('result');
+            const copyBtn = document.getElementById('copy-btn');
+            
+            if (!fileInput.files.length) {
+                return alert("Please select an image first!");
+            }
+            
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('category', categorySelect.value);
+            formData.append('user_id', currentUser.id);
+
+            resultContainer.classList.remove('hidden');
+            resultContainer.classList.add('flex');
+            copyBtn.classList.add('hidden'); // Hide copy button while loading
+            
+            resultBox.innerText = "ANALYZING IMAGE & GENERATING NICHE LISTING... ⏳";
+            resultBox.className = "p-6 border border-purple-800 rounded-md bg-black whitespace-pre-wrap text-white font-mono text-sm shadow-inner leading-relaxed";
+
+            try {
+                const response = await fetch('/api/generate-listing', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.result) {
+                    resultBox.innerText = data.result;
+                    copyBtn.classList.remove('hidden'); // Show copy button when success
+                } else {
+                    resultBox.innerText = "🚨 " + data.error;
+                    resultBox.className = "p-6 border border-red-800 rounded-md bg-[#1a0505] whitespace-pre-wrap text-red-400 font-bold font-mono text-sm shadow-[0_0_15px_rgba(255,0,0,0.2)] leading-relaxed";
+                }
+            } catch (e) {
+                resultBox.innerText = "A CONNECTION ERROR OCCURRED.";
+            }
+        }
+
+        checkUser();
+    </script>
+</body>
+</html>
