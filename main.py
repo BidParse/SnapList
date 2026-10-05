@@ -164,6 +164,7 @@ async def create_checkout_session(request: Request):
                 'quantity': 1,
             }],
             mode='payment',
+            allow_promotion_codes=True, # <-- THIS ACTIVATES THE PROMO BOX
             success_url=str(request.base_url) + "?success=true",
             cancel_url=str(request.base_url) + "?canceled=true",
             client_reference_id=user_id
