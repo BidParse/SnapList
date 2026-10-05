@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimpleList</title>
-    <!-- These two scripts are the engine and the paint. If they are missing, it looks like Craigslist! -->
+    <!-- This script right here is what gives the app its design! -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -136,4 +136,131 @@
         }
 
         async function signUp() {
-            const email = document.
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('auth-message');
+            if (!email || !password) return messageEl.innerText = "Please enter an email and password.";
+            messageEl.innerText = "SIGNING UP...";
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) messageEl.innerText = error.message.toUpperCase();
+            else messageEl.innerText = "SUCCESS! PLEASE LOG IN.";
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('auth-message');
+            if (!email || !password) return messageEl.innerText = "Please enter an email and password.";
+            messageEl.innerText = "LOGGING IN...";
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) messageEl.innerText = error.message.toUpperCase();
+            else { messageEl.innerText = ""; checkUser(); }
+        }
+
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            checkUser();
+        }
+
+        async function checkout() {
+            if (!currentUser) return alert("Please log in first!");
+            try {
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUser.id })
+                });
+                const data = await response.json();
+                if (data.url) window.location.href = data.url; 
+                else alert("Error starting checkout");
+            } catch (err) {
+                alert("Payment system unavailable right now.");
+            }
+        }
+
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const output = document.getElementById('image-preview');
+                output.src = reader.result;
+                output.classList.remove('hidden');
+            };
+            if (event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function copySpecific(elementId, btnElement) {
+            const textToCopy = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = btnElement.innerHTML;
+                const originalClasses = btnElement.className;
+                
+                btnElement.innerHTML = '✅ COPIED!';
+                btnElement.className = 'bg-green-500 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors';
+                
+                setTimeout(() => {
+                    btnElement.innerHTML = originalText;
+                    btnElement.className = originalClasses;
+                }, 2000);
+            });
+        }
+
+        async function generateListing() {
+            if (!currentUser) return alert("Please log in to generate a listing!");
+
+            const fileInput = document.getElementById('image-upload');
+            const categorySelect = document.getElementById('category-select');
+            const statusMsg = document.getElementById('status-message');
+            const smartResults = document.getElementById('smart-results');
+            
+            if (!fileInput.files.length) return alert("Please select an image first!");
+            
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('category', categorySelect.value);
+            formData.append('user_id', currentUser.id);
+
+            statusMsg.classList.remove('hidden');
+            smartResults.classList.add('hidden');
+            statusMsg.innerText = "ANALYZING IMAGE & GENERATING NICHE LISTING... ⏳";
+            statusMsg.className = "mt-8 p-6 border border-purple-800 rounded-md bg-black text-purple-400 font-bold font-mono text-sm shadow-inner text-center";
+
+            try {
+                const response = await fetch('/api/generate-listing', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.result) {
+                    try {
+                        let cleanJson = data.result.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                        const parsed = JSON.parse(cleanJson);
+                        
+                        document.getElementById('out-title').innerText = parsed.title || "No title generated";
+                        document.getElementById('out-pricing').innerText = parsed.pricing || "Pricing unavailable";
+                        document.getElementById('out-condition').innerText = parsed.condition || "N/A";
+                        document.getElementById('out-ebay').innerText = parsed.ebay || "N/A";
+                        document.getElementById('out-facebook').innerText = parsed.facebook || "N/A";
+                        document.getElementById('out-poshmark').innerText = parsed.poshmark || "N/A";
+                        document.getElementById('out-tags').innerText = parsed.tags || "N/A";
+                        
+                        statusMsg.classList.add('hidden');
+                        smartResults.classList.remove('hidden');
+                        smartResults.classList.add('flex');
+                    } catch (parseError) {
+                        statusMsg.innerText = "🚨 Error formatting the response. Please try again.";
+                        statusMsg.className = "mt-8 p-6 border border-red-800 rounded-md bg-[#1a0505] text-red-400 font-bold font-mono text-sm shadow-[0_0_15px_rgba(255,0,0,0.2)] text-center";
+                    }
+                } else {
+                    statusMsg.innerText = "🚨 " + data.error;
+                    statusMsg.className = "mt-8 p-6 border border-red-800 rounded-md bg-[#1a0505] text-red-400 font-bold font-mono text-sm shadow-[0_0_15px_rgba(255,0,0,0.2)] text-center";
+                }
+            } catch (e) {
+                statusMsg.innerText = "A CONNECTION ERROR OCCURRED.";
+            }
+        }
+
+        checkUser();
+    </script>
+</body>
+</html>
