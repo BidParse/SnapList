@@ -55,29 +55,37 @@ async def serve_logo():
 async def generate_listing(
     image: UploadFile = File(...), 
     category: str = Form("General"),
-    user_id: str = Form(...) # NEW: The backend now demands to know WHO is asking
+    user_id: str = Form(None)
 ):
-    if not gemini_client or not supabase:
-        return JSONResponse(content={"error": "Server services not fully connected."}, status_code=500)
-    
-    try:
-        # 1. THE BOUNCER: Check the user's profile and generation count
-        profile_response = supabase.table("profiles").select("is_pro, generation_count").eq("id", user_id).execute()
+    if not gemini_client:
+        raise HTTPException(status_code=500, detail="Gemini API Key missing")
         
+    if not user_id or not supabase:
+        return JSONResponse(content={"error": "Please log in to generate listings."}, status_code=401)
+        
+    # --- THE PAYWALL LOGIC ---
+    try:
+        profile_response = supabase.table("profiles").select("is_pro, generation_count").eq("id", user_id).execute()
         if not profile_response.data:
-            return JSONResponse(content={"error": "Profile not found. Please log out and back in."}, status_code=403)
-            
+            return JSONResponse(content={"error": "User profile not found. Please log out and back in."}, status_code=404)
+        
         profile = profile_response.data[0]
         is_pro = profile.get("is_pro", False)
         generation_count = profile.get("generation_count", 0)
         
-        # 2. THE PAYWALL: If they aren't Pro and have used 3 generations, stop them!
+        # Block if they hit the limit and aren't Pro
         if not is_pro and generation_count >= 3:
-            return JSONResponse(content={"error": "LIMIT_REACHED"}, status_code=403)
-
-        # 3. IF CLEARED, RUN THE AI
+            return JSONResponse(
+                content={"error": "FREE TRIAL ENDED! You have used your 3 free listings. Click 'UPGRADE - $9.99' above for unlimited generations!"}
+            )
+    except Exception as e:
+        print("Database error:", e)
+        return JSONResponse(content={"error": "Database connection error."}, status_code=500)
+    
+    try:
         image_data = await image.read()
         
+        # Niche Intelligence Routing
         category_instructions = {
             "Sneakers & Shoes": "Focus heavily on colorway, size tags, visible wear on outsoles/midsoles, authenticity indicators, and box condition. Mention if it looks like a retro or highly sought-after release.",
             "Trading Cards & Collectibles": "Act as a card grader. Focus tightly on centering, corner sharpness, edge wear, surface condition, and potential grading value (PSA/Beckett). Note parallels or holos.",
@@ -89,6 +97,7 @@ async def generate_listing(
         
         niche_focus = category_instructions.get(category, category_instructions["General"])
         
+        # The Elite Cross-Listing Super Prompt
         prompt = f"""You are an elite e-commerce copywriter, appraiser, and cross-listing expert. 
         The user has categorized this item as: {category}. 
         CRITICAL NICHE INSTRUCTION: {niche_focus}
@@ -129,10 +138,10 @@ async def generate_listing(
             ]
         )
         
-        # 4. CHARGE THE ACCOUNT: If they aren't Pro, add +1 to their generation count
+        # --- TICK THE COUNTER UP ---
         if not is_pro:
             supabase.table("profiles").update({"generation_count": generation_count + 1}).eq("id", user_id).execute()
-            
+        
         return JSONResponse(content={"result": response.text})
         
     except Exception as e:
