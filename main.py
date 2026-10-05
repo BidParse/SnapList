@@ -63,7 +63,7 @@ async def generate_listing(
     if not user_id or not supabase:
         return JSONResponse(content={"error": "Please log in to generate listings."}, status_code=401)
         
-    # --- THE PAYWALL LOGIC ---
+    # Paywall Logic
     try:
         profile_response = supabase.table("profiles").select("is_pro, generation_count").eq("id", user_id).execute()
         if not profile_response.data:
@@ -73,7 +73,6 @@ async def generate_listing(
         is_pro = profile.get("is_pro", False)
         generation_count = profile.get("generation_count", 0)
         
-        # Block if they hit the limit and aren't Pro
         if not is_pro and generation_count >= 3:
             return JSONResponse(
                 content={"error": "FREE TRIAL ENDED! You have used your 3 free listings. Click 'UPGRADE - $9.99' above for unlimited generations!"}
@@ -85,49 +84,33 @@ async def generate_listing(
     try:
         image_data = await image.read()
         
-        # Niche Intelligence Routing
         category_instructions = {
-            "Sneakers & Shoes": "Focus heavily on colorway, size tags, visible wear on outsoles/midsoles, authenticity indicators, and box condition. Mention if it looks like a retro or highly sought-after release.",
-            "Trading Cards & Collectibles": "Act as a card grader. Focus tightly on centering, corner sharpness, edge wear, surface condition, and potential grading value (PSA/Beckett). Note parallels or holos.",
-            "Electronics & Computers": "Focus on identifying make, model, specs (RAM, storage, processor if identifiable), ports, and visible physical condition. Note if testing is required.",
-            "Vehicles & Auto Parts": "Identify the vehicle part or model. Focus on compatibility, visible wear, OEM markers, and functional condition for mechanics or gearheads.",
-            "Clothing & Apparel": "Focus on brand, aesthetic style, visible size, material quality, and measurements. Note any fading, pilling, or stains.",
+            "Sneakers & Shoes": "Focus on colorway, size tags, visible wear on outsoles, authenticity indicators, and box condition.",
+            "Trading Cards & Collectibles": "Focus on centering, corner sharpness, edge wear, surface condition, and grading value.",
+            "Electronics & Computers": "Focus on identifying make, model, specs (RAM, storage, processor), ports, and physical condition.",
+            "Vehicles & Auto Parts": "Identify the vehicle part or model. Focus on compatibility, visible wear, OEM markers.",
+            "Clothing & Apparel": "Focus on brand, aesthetic style, visible size, material quality, and measurements.",
             "General": "Provide a comprehensive breakdown of the item's visual condition and standard features."
         }
         
         niche_focus = category_instructions.get(category, category_instructions["General"])
         
-        # The Elite Cross-Listing Super Prompt
-        prompt = f"""You are an elite e-commerce copywriter, appraiser, and cross-listing expert. 
-        The user has categorized this item as: {category}. 
+        # NEW JSON PROMPT
+        prompt = f"""You are an elite e-commerce copywriter.
+        Category: {category}. 
         CRITICAL NICHE INSTRUCTION: {niche_focus}
 
-        Analyze this product image and generate a master listing package designed to maximize sales across multiple platforms. Format the output clearly with the following sections and spacing:
-
-        🏆 MASTER TITLE
-        (Provide a highly-searchable, 80-character max SEO title including brand, model, color, and size if applicable)
-
-        💰 APPRAISAL & PRICING STRATEGY
-        • Quick Sale Price (Priced to move in 24-48 hours): $...
-        • Fair Market Value (Average current comp): $...
-        • Max Profit/Retail (If in pristine/new condition): $...
-
-        📦 PLATFORM-SPECIFIC DESCRIPTIONS
+        Analyze this product image and generate a master listing package. 
+        YOU MUST RETURN YOUR RESPONSE AS A VALID, RAW JSON OBJECT. Do not include markdown formatting like ```json. Just return the JSON starting with {{ and ending with }}.
         
-        1️⃣ eBay / Mercari (The Professional Listing)
-        Write a detailed, bulleted description focusing on exact item specifics, condition grading, authenticity markers, and professional shipping/return policies.
-        
-        2️⃣ Facebook Marketplace / OfferUp (The Local Listing)
-        Write a conversational, urgent, and friendly description. Include placeholders for [City/Zip Code] local pickup, cash/digital payment preferences, and a "first come, first served" call to action.
-        
-        3️⃣ Poshmark / Depop (The Boutique Listing)
-        Write a trendy, stylish description utilizing relevant emojis. Focus on the aesthetic, how to style it, and include 5-10 highly relevant aesthetic hashtags at the bottom.
-
-        ✨ CONDITION & FLAW CHECK
-        (List the apparent condition based on the photo. Note any visible flaws, scuffs, or missing parts the seller should double-check before posting.)
-
-        🔍 MASTER SEO TAGS
-        (Provide a comma-separated list of 15 high-volume search keywords for backend tags)
+        Use exactly these keys:
+        "title": "A highly-searchable, 80-character max SEO title",
+        "pricing": "Quick Sale: $... | Fair Market: $... | Max Profit: $...",
+        "ebay": "A detailed, bulleted description focusing on exact item specifics, condition grading, and professionalism. DO NOT INCLUDE THE TITLE HERE.",
+        "facebook": "A conversational, urgent, and friendly description with local pickup placeholders. DO NOT INCLUDE THE TITLE HERE.",
+        "poshmark": "A trendy, stylish description utilizing relevant emojis and hashtags. DO NOT INCLUDE THE TITLE HERE.",
+        "condition": "A strict assessment of visible condition and flaws.",
+        "tags": "A comma-separated list of 15 high-volume search keywords."
         """
         
         response = gemini_client.models.generate_content(
@@ -138,7 +121,6 @@ async def generate_listing(
             ]
         )
         
-        # --- TICK THE COUNTER UP ---
         if not is_pro:
             supabase.table("profiles").update({"generation_count": generation_count + 1}).eq("id", user_id).execute()
         
@@ -164,7 +146,7 @@ async def create_checkout_session(request: Request):
                 'quantity': 1,
             }],
             mode='payment',
-            allow_promotion_codes=True, # <-- THIS ACTIVATES THE PROMO BOX
+            allow_promotion_codes=True,
             success_url=str(request.base_url) + "?success=true",
             cancel_url=str(request.base_url) + "?canceled=true",
             client_reference_id=user_id
