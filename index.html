@@ -23,14 +23,18 @@
             
             <input type="password" id="password" placeholder="Password" class="bg-black border border-purple-800 text-white p-4 w-full mb-2 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
             
-            <!-- Password requirements hint -->
             <p class="text-xs text-gray-500 mb-6 text-left pl-1">Requirement: Password must be at least 6 characters long.</p>
             
             <div class="flex gap-4">
                 <button onclick="handleLogin()" class="bg-purple-600 text-white font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-500 transition-colors duration-200">Login</button>
                 <button onclick="handleSignUp()" class="bg-black border border-purple-600 text-purple-500 font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-900/30 transition-colors duration-200">Sign Up</button>
             </div>
-            <!-- Error and success messages will properly display here now -->
+            
+            <!-- NEW: Forgot Password Button -->
+            <div class="mt-6 text-center">
+                <button onclick="handleResetPassword()" class="text-xs text-purple-400 hover:text-purple-300 transition-colors uppercase tracking-widest font-bold">Forgot Password?</button>
+            </div>
+
             <p id="auth-message" class="mt-5 text-sm text-center font-bold whitespace-pre-wrap"></p>
         </div>
 
@@ -68,10 +72,8 @@
                 <button onclick="handleGenerateListing()" class="bg-purple-600 text-white px-4 py-4 rounded-md w-full font-black text-lg uppercase tracking-wider hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(128,0,128,0.4)]">Generate AI Listing</button>
             </div>
 
-            <!-- Global Status / Error Message -->
             <div id="status-message" class="mt-8 hidden p-6 border border-purple-800 rounded-md bg-black text-white font-mono text-sm shadow-inner text-center"></div>
 
-            <!-- SMART UI: Segmented Results -->
             <div id="smart-results" class="mt-8 hidden flex-col gap-6">
                 
                 <div class="p-6 border border-purple-600 bg-black rounded-md relative group">
@@ -117,7 +119,6 @@
         let supabaseClient = null;
         let currentUser = null;
 
-        // Wrapped in a try/catch in case an adblocker on your PC kills the database connection
         try {
             const SUPABASE_URL = 'https://wzmaaahyovsroeyjsmst.supabase.co';
             const SUPABASE_ANON_KEY = 'sb_publishable_7HpG3z67MVak6k9csFWmKQ_7MLqrMyP'; 
@@ -200,6 +201,37 @@
                 } else {
                     messageEl.innerText = "";
                     handleCheckUser();
+                }
+            } catch (err) {
+                messageEl.innerText = "ERROR: " + err.message;
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide whitespace-pre-wrap";
+            }
+        }
+
+        // NEW: Reset Password Function
+        async function handleResetPassword() {
+            const messageEl = document.getElementById('auth-message');
+            try {
+                if (!supabaseClient) throw new Error("Database connection error.");
+                const email = document.getElementById('email').value;
+                
+                if (!email) {
+                    messageEl.innerText = "PLEASE ENTER YOUR EMAIL ADDRESS ABOVE FIRST.";
+                    messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
+                    return;
+                }
+
+                messageEl.innerText = "SENDING RESET LINK... ⏳";
+                messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
+                
+                const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email);
+                
+                if (error) {
+                    messageEl.innerText = "ERROR: " + error.message.toUpperCase();
+                    messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide whitespace-pre-wrap";
+                } else {
+                    messageEl.innerText = "RESET LINK SENT! CHECK YOUR EMAIL.";
+                    messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
                 }
             } catch (err) {
                 messageEl.innerText = "ERROR: " + err.message;
@@ -310,7 +342,6 @@
             }
         }
 
-        // Run user check on load
         handleCheckUser();
     </script>
 </body>
