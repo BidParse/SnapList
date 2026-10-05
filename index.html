@@ -4,58 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimpleList</title>
+    <!-- Tailwind CSS for Dark Mode Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-black text-white p-8 font-sans min-h-screen flex flex-col items-center">
-    <div class="w-full max-w-2xl bg-[#111111] border border-purple-900 p-10 rounded-xl shadow-[0_0_20px_rgba(128,0,128,0.3)]">
+<body class="bg-black text-white p-4 sm:p-8 font-sans min-h-screen flex flex-col items-center">
+    <div class="w-full max-w-2xl bg-[#111111] border border-purple-900 p-6 sm:p-10 rounded-xl shadow-[0_0_20px_rgba(128,0,128,0.3)]">
         
-        <div class="text-center mb-10">
-            <h1 class="text-6xl font-black tracking-wide mb-6"><span class="text-purple-600">Simple</span><span class="text-white">List</span></h1>
-            <img src="logo.png" alt="SimpleList Logo" class="h-40 mx-auto object-contain drop-shadow-[0_0_15px_rgba(147,51,234,0.3)]">
-            <p class="text-sm text-[#C0C0C0] mt-6 tracking-widest uppercase">AI Marketplace Generator</p>
+        <!-- HEADER LOGO -->
+        <div class="text-center mb-8">
+            <h1 class="text-5xl sm:text-6xl font-black tracking-wide mb-4"><span class="text-purple-600">Simple</span><span class="text-white">List</span></h1>
+            <p class="text-xs text-[#C0C0C0] tracking-widest uppercase">AI Marketplace Generator</p>
         </div>
 
-        <!-- AUTHENTICATION SECTION (Login / Sign Up) -->
-        <div id="auth-section" class="mb-8 pb-8 border-b border-purple-900/50">
-            <h2 class="text-xl mb-4 font-bold text-purple-400 uppercase tracking-wide">Account Access</h2>
+        <!-- MAIN NAVIGATION (Hidden until logged in) -->
+        <div id="main-nav" class="hidden flex gap-2 mb-8 p-1 bg-black border border-purple-900/50 rounded-md">
+            <button onclick="showSection('generator-section')" id="tab-generator" class="flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors">Generator</button>
+            <button onclick="showSection('profile-section')" id="tab-profile" class="flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors">My Profile</button>
+            <button onclick="handleLogout()" class="flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-red-900/30 text-red-400 transition-colors">Logout</button>
+        </div>
+
+        <!-- 1. AUTHENTICATION SECTION (Login / Sign Up) -->
+        <div id="auth-section" class="mb-8 pb-8 text-center">
+            <h2 class="text-xl mb-6 font-bold text-purple-400 uppercase tracking-wide">Account Access</h2>
             <input type="email" id="email" placeholder="Email Address" class="bg-black border border-purple-800 text-white p-4 w-full mb-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
-            
             <input type="password" id="password" placeholder="Password" class="bg-black border border-purple-800 text-white p-4 w-full mb-2 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
-            
             <p class="text-xs text-gray-500 mb-6 text-left pl-1">Requirement: Password must be at least 6 characters long.</p>
             
             <div class="flex gap-4">
-                <button onclick="handleLogin()" class="bg-purple-600 text-white font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-500 transition-colors duration-200">Login</button>
-                <button onclick="handleSignUp()" class="bg-black border border-purple-600 text-purple-500 font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-900/30 transition-colors duration-200">Sign Up</button>
+                <button onclick="handleLogin()" class="bg-purple-600 text-white font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-500 transition-colors">Login</button>
+                <button onclick="handleSignUp()" class="bg-black border border-purple-600 text-purple-500 font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-900/30 transition-colors">Sign Up</button>
             </div>
             
-            <div class="mt-6 text-center">
+            <div class="mt-6">
                 <button onclick="handleResetPasswordRequest()" class="text-xs text-purple-400 hover:text-purple-300 transition-colors uppercase tracking-widest font-bold">Forgot Password?</button>
             </div>
-
-            <p id="auth-message" class="mt-5 text-sm text-center font-bold whitespace-pre-wrap"></p>
+            <p id="auth-message" class="mt-5 text-sm font-bold whitespace-pre-wrap"></p>
         </div>
 
-        <!-- PASSWORD RECOVERY SECTION -->
-        <div id="recovery-section" class="hidden mb-8 pb-8 border-b border-purple-900/50 text-center">
-            <h2 class="text-xl mb-4 font-bold text-green-400 uppercase tracking-wide">Reset Your Password</h2>
-            <p class="text-sm text-[#C0C0C0] mb-6">Enter your new secure password below.</p>
+        <!-- 2. PASSWORD RECOVERY SECTION (Triggered via email link) -->
+        <div id="recovery-section" class="hidden mb-8 text-center border border-green-900 bg-[#051105] p-8 rounded-md shadow-[0_0_15px_rgba(0,255,0,0.1)]">
+            <h2 class="text-2xl mb-2 font-bold text-green-400 uppercase tracking-wide">Reset Password</h2>
+            <p class="text-sm text-green-200/70 mb-6">Enter your new secure password below.</p>
             
-            <input type="password" id="new-password" placeholder="New Password" class="bg-black border border-purple-800 text-white p-4 w-full mb-2 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
-            <p class="text-xs text-gray-500 mb-6 text-left pl-1">Requirement: Password must be at least 6 characters long.</p>
+            <input type="password" id="new-password" placeholder="New Password" class="bg-black border border-green-800 text-white p-4 w-full mb-2 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500">
+            <p class="text-xs text-green-500/50 mb-6 text-left pl-1">Requirement: Minimum 6 characters.</p>
             
-            <button onclick="handleUpdatePassword()" class="bg-green-600 text-white font-black uppercase tracking-wider px-4 py-4 rounded-md w-full hover:bg-green-500 transition-colors duration-200">Save New Password</button>
-            <p id="recovery-message" class="mt-5 text-sm text-center font-bold whitespace-pre-wrap"></p>
+            <button onclick="handleUpdatePassword()" class="bg-green-600 text-white font-black uppercase tracking-wider px-4 py-4 rounded-md w-full hover:bg-green-500 transition-colors">Save New Password</button>
+            <p id="recovery-message" class="mt-5 text-sm font-bold whitespace-pre-wrap"></p>
         </div>
 
-        <!-- MAIN DASHBOARD APP SECTION -->
-        <div id="app-section" class="hidden">
-            <div class="flex justify-between items-center mb-8 bg-black p-4 rounded-md border border-purple-900/50">
-                <p class="text-sm text-[#C0C0C0]">USER: <span id="user-email" class="font-bold text-purple-400 tracking-wide"></span></p>
-                <button onclick="handleLogout()" class="text-[#C0C0C0] text-sm font-bold uppercase hover:text-white transition-colors">Logout</button>
+        <!-- 3. USER PROFILE DASHBOARD -->
+        <div id="profile-section" class="hidden">
+            <div class="p-6 bg-black border border-purple-800 rounded-md mb-8 flex flex-col items-center">
+                <!-- Auto-Generated Avatar based on Email -->
+                <img id="profile-avatar" src="" alt="User Avatar" class="w-24 h-24 rounded-full bg-purple-900 mb-4 border-2 border-purple-500 shadow-[0_0_15px_rgba(147,51,234,0.4)]">
+                <h3 class="text-lg font-bold text-white tracking-wide" id="profile-email-display">user@email.com</h3>
+                <p class="text-xs text-purple-400 uppercase tracking-widest mt-1 mb-6">SimpleList Member</p>
+                
+                <div class="w-full space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Your Bio / Store Info</label>
+                        <textarea id="profile-bio" rows="3" placeholder="Tell buyers about your store..." class="mt-1 bg-[#111] border border-gray-700 text-white p-3 w-full rounded-md focus:outline-none focus:border-purple-500 text-sm"></textarea>
+                    </div>
+                    <button onclick="handleSaveProfile()" class="bg-purple-900 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-purple-700 w-full transition-colors border border-purple-700">Save Profile</button>
+                </div>
             </div>
 
+            <!-- Internal Password Change -->
+            <div class="p-6 bg-[#0a0a0a] border border-gray-800 rounded-md">
+                <h4 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-4">Update Password</h4>
+                <input type="password" id="internal-new-password" placeholder="New Password" class="bg-black border border-gray-700 text-white p-3 w-full mb-3 rounded-md focus:outline-none focus:border-purple-500 text-sm">
+                <button onclick="handleInternalPasswordUpdate()" class="bg-gray-800 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-gray-700 w-full transition-colors border border-gray-600">Change Password</button>
+                <p id="profile-message" class="mt-3 text-xs text-center font-bold"></p>
+            </div>
+        </div>
+
+        <!-- 4. GENERATOR SECTION (The main app) -->
+        <div id="generator-section" class="hidden">
             <div class="mb-10 p-6 bg-gradient-to-r from-purple-900/40 to-black border border-purple-700 rounded-md flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div>
                     <h3 class="font-black text-xl text-white uppercase tracking-wider">SimpleList <span class="text-purple-400">Pro</span></h3>
@@ -65,8 +91,6 @@
             </div>
 
             <div>
-                <h2 class="text-xl mb-4 font-bold text-purple-400 uppercase tracking-wide">New Listing</h2>
-                
                 <select id="category-select" class="w-full bg-black border border-purple-700 text-[#C0C0C0] p-4 mb-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-400 font-bold uppercase tracking-wide cursor-pointer hover:border-purple-500 transition-colors">
                     <option value="General">Auto-Detect (General Listing)</option>
                     <option value="Sneakers & Shoes">Sneakers & Shoes</option>
@@ -87,12 +111,12 @@
             <div id="status-message" class="mt-8 hidden p-6 border border-purple-800 rounded-md bg-black text-white font-mono text-sm shadow-inner text-center"></div>
 
             <div id="smart-results" class="mt-8 hidden flex-col gap-6">
-                
-                <div class="p-6 border border-purple-600 bg-black rounded-md relative group">
+                <!-- Dynamic Results Cards -->
+                <div class="p-6 border border-purple-600 bg-black rounded-md">
                     <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Title & Pricing</h4>
                     <p id="out-title" class="font-bold text-lg mb-2 text-white"></p>
                     <p id="out-pricing" class="text-sm text-green-400 font-mono"></p>
-                    <button onclick="copySpecific('out-title', this)" class="mt-4 bg-purple-900 text-white px-3 py-2 rounded text-xs font-bold uppercase hover:bg-purple-700 w-full transition-colors">Copy Title</button>
+                    <button onclick="copySpecific('out-title', this)" class="mt-4 bg-purple-900 text-white px-3 py-2 rounded text-xs font-bold uppercase w-full transition-colors">Copy Title</button>
                 </div>
 
                 <div class="p-6 border border-gray-700 bg-[#0a0a0a] rounded-md">
@@ -103,25 +127,19 @@
                 <div class="p-6 border border-blue-600 bg-black rounded-md">
                     <h4 class="text-xs text-blue-400 font-bold uppercase tracking-widest mb-2">eBay / Mercari</h4>
                     <p id="out-ebay" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
-                    <button onclick="copySpecific('out-ebay', this)" class="bg-blue-600 text-white px-3 py-3 rounded text-sm font-bold uppercase hover:bg-blue-500 w-full transition-colors">Copy eBay Description</button>
+                    <button onclick="copySpecific('out-ebay', this)" class="bg-blue-600 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors">Copy eBay</button>
                 </div>
 
                 <div class="p-6 border border-blue-400 bg-black rounded-md">
                     <h4 class="text-xs text-blue-300 font-bold uppercase tracking-widest mb-2">Facebook / OfferUp</h4>
                     <p id="out-facebook" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
-                    <button onclick="copySpecific('out-facebook', this)" class="bg-blue-500 text-white px-3 py-3 rounded text-sm font-bold uppercase hover:bg-blue-400 w-full transition-colors">Copy Facebook Description</button>
+                    <button onclick="copySpecific('out-facebook', this)" class="bg-blue-500 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors">Copy Facebook</button>
                 </div>
 
                 <div class="p-6 border border-pink-600 bg-black rounded-md">
                     <h4 class="text-xs text-pink-400 font-bold uppercase tracking-widest mb-2">Poshmark / Depop</h4>
                     <p id="out-poshmark" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
-                    <button onclick="copySpecific('out-poshmark', this)" class="bg-pink-600 text-white px-3 py-3 rounded text-sm font-bold uppercase hover:bg-pink-500 w-full transition-colors">Copy Poshmark Description</button>
-                </div>
-
-                <div class="p-6 border border-gray-600 bg-black rounded-md">
-                    <h4 class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2">SEO Tags</h4>
-                    <p id="out-tags" class="text-sm text-gray-300 mb-4"></p>
-                    <button onclick="copySpecific('out-tags', this)" class="bg-gray-700 text-white px-3 py-2 rounded text-xs font-bold uppercase hover:bg-gray-600 w-full transition-colors">Copy Tags</button>
+                    <button onclick="copySpecific('out-poshmark', this)" class="bg-pink-600 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors">Copy Poshmark</button>
                 </div>
             </div>
         </div>
@@ -139,187 +157,174 @@
             console.error("Supabase failed to load", e);
         }
 
-        if (supabaseClient) {
-            supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                if (event === 'PASSWORD_RECOVERY') {
-                    document.getElementById('auth-section').classList.add('hidden');
-                    document.getElementById('app-section').classList.add('hidden');
-                    document.getElementById('recovery-section').classList.remove('hidden');
-                }
-            });
+        // Section Toggler
+        function showSection(sectionId) {
+            document.getElementById('generator-section').classList.add('hidden');
+            document.getElementById('profile-section').classList.add('hidden');
+            
+            // Highlight active tab
+            document.getElementById('tab-generator').className = 'flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors';
+            document.getElementById('tab-profile').className = 'flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors';
+            
+            if (sectionId === 'generator-section') {
+                document.getElementById('tab-generator').className = 'flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors';
+            } else {
+                document.getElementById('tab-profile').className = 'flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors';
+            }
+
+            document.getElementById(sectionId).classList.remove('hidden');
         }
 
         async function handleCheckUser() {
             if (!supabaseClient) return;
 
-            const hash = window.location.hash;
-            const search = window.location.search;
-            
-            // Supabase drops the token directly into the URL hash when returning from the email
-            const isRecovery = hash.includes('type=recovery') || hash.includes('access_token') || search.includes('code=');
-
-            if (isRecovery) {
+            // THE BULLETPROOF RESET CHECK (Bypasses iOS Mail Quirks)
+            const urlStr = window.location.href;
+            if (urlStr.includes('reset=true') || urlStr.includes('type=recovery') || urlStr.includes('access_token')) {
                 document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('app-section').classList.add('hidden');
+                document.getElementById('main-nav').classList.add('hidden');
+                document.getElementById('generator-section').classList.add('hidden');
+                document.getElementById('profile-section').classList.add('hidden');
                 document.getElementById('recovery-section').classList.remove('hidden');
+                return; 
             }
 
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 currentUser = session.user;
-                if (!isRecovery) {
-                    document.getElementById('auth-section').classList.add('hidden');
-                    document.getElementById('recovery-section').classList.add('hidden');
-                    document.getElementById('app-section').classList.remove('hidden');
-                    document.getElementById('user-email').innerText = currentUser.email;
+                
+                // Populate Profile
+                document.getElementById('profile-email-display').innerText = currentUser.email;
+                document.getElementById('profile-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.email}&backgroundColor=222222`;
+                if (currentUser.user_metadata && currentUser.user_metadata.bio) {
+                    document.getElementById('profile-bio').value = currentUser.user_metadata.bio;
                 }
+
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('recovery-section').classList.add('hidden');
+                document.getElementById('main-nav').classList.remove('hidden');
+                document.getElementById('main-nav').classList.add('flex');
+                
+                showSection('generator-section'); // Default view
             } else {
                 currentUser = null;
-                if (!isRecovery) {
-                    document.getElementById('auth-section').classList.remove('hidden');
-                    document.getElementById('app-section').classList.add('hidden');
-                    document.getElementById('recovery-section').classList.add('hidden');
-                }
+                document.getElementById('main-nav').classList.add('hidden');
+                document.getElementById('generator-section').classList.add('hidden');
+                document.getElementById('profile-section').classList.add('hidden');
+                document.getElementById('recovery-section').classList.add('hidden');
+                document.getElementById('auth-section').classList.remove('hidden');
             }
         }
 
+        // ---- PROFILE FUNCTIONS ----
+        async function handleSaveProfile() {
+            const bioText = document.getElementById('profile-bio').value;
+            const btn = event.target;
+            const originalText = btn.innerText;
+            
+            btn.innerText = "SAVING...";
+            const { data, error } = await supabaseClient.auth.updateUser({
+                data: { bio: bioText }
+            });
+            
+            if (!error) {
+                btn.className = "bg-green-600 text-white px-4 py-2 rounded text-xs font-bold uppercase w-full transition-colors border border-green-500";
+                btn.innerText = "SAVED!";
+                setTimeout(() => {
+                    btn.className = "bg-purple-900 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-purple-700 w-full transition-colors border border-purple-700";
+                    btn.innerText = originalText;
+                }, 2000);
+            }
+        }
+
+        async function handleInternalPasswordUpdate() {
+            const msgEl = document.getElementById('profile-message');
+            const newPass = document.getElementById('internal-new-password').value;
+            
+            if (newPass.length < 6) {
+                msgEl.innerText = "MUST BE AT LEAST 6 CHARACTERS.";
+                msgEl.className = "mt-3 text-xs text-center font-bold text-red-500";
+                return;
+            }
+            
+            msgEl.innerText = "UPDATING...";
+            msgEl.className = "mt-3 text-xs text-center font-bold text-purple-400";
+            
+            const { error } = await supabaseClient.auth.updateUser({ password: newPass });
+            
+            if (error) {
+                msgEl.innerText = "ERROR: " + error.message;
+                msgEl.className = "mt-3 text-xs text-center font-bold text-red-500";
+            } else {
+                msgEl.innerText = "PASSWORD SUCCESSFULLY CHANGED!";
+                msgEl.className = "mt-3 text-xs text-center font-bold text-green-400";
+                document.getElementById('internal-new-password').value = '';
+            }
+        }
+
+        // ---- AUTH FUNCTIONS ----
         async function handleSignUp() {
             const messageEl = document.getElementById('auth-message');
-            try {
-                if (!supabaseClient) throw new Error("Database connection error.");
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                
-                if (!email || !password) {
-                    messageEl.innerText = "Please enter an email and password.";
-                    messageEl.className = "mt-5 text-sm text-center font-bold text-red-500";
-                    return;
-                }
-
-                messageEl.innerText = "SIGNING UP...";
-                messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
-                
-                const { data, error } = await supabaseClient.auth.signUp({ email, password });
-                
-                if (error) {
-                    messageEl.innerText = error.message.toUpperCase();
-                    messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
-                } else {
-                    messageEl.innerText = "SUCCESS! PLEASE LOG IN.";
-                    messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
-                }
-            } catch (err) {
-                messageEl.innerText = "ERROR: " + err.message;
-                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
-            }
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if (!email || !password) return messageEl.innerText = "Please enter email and password.", messageEl.className = "mt-5 text-sm text-red-500";
+            messageEl.innerText = "SIGNING UP...", messageEl.className = "mt-5 text-sm text-purple-400";
+            const { error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) messageEl.innerText = error.message.toUpperCase(), messageEl.className = "mt-5 text-sm text-red-500";
+            else messageEl.innerText = "SUCCESS! PLEASE LOG IN.", messageEl.className = "mt-5 text-sm text-green-400";
         }
 
         async function handleLogin() {
             const messageEl = document.getElementById('auth-message');
-            try {
-                if (!supabaseClient) throw new Error("Database connection error.");
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                
-                if (!email || !password) {
-                    messageEl.innerText = "Please enter an email and password.";
-                    messageEl.className = "mt-5 text-sm text-center font-bold text-red-500";
-                    return;
-                }
-
-                messageEl.innerText = "LOGGING IN...";
-                messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
-                
-                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                
-                if (error) {
-                    let errorMsg = error.message ? error.message.toUpperCase() : "LOGIN FAILED";
-                    if (errorMsg.includes("INVALID LOGIN CREDENTIALS")) {
-                        errorMsg = "INCORRECT EMAIL OR PASSWORD.\n\nHINT: PASSWORDS MUST BE AT LEAST 6 CHARACTERS LONG.";
-                    }
-                    messageEl.innerText = errorMsg;
-                    messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide whitespace-pre-wrap";
-                } else {
-                    messageEl.innerText = "";
-                    handleCheckUser();
-                }
-            } catch (err) {
-                messageEl.innerText = "ERROR: " + err.message;
-                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide whitespace-pre-wrap";
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if (!email || !password) return messageEl.innerText = "Please enter email and password.", messageEl.className = "mt-5 text-sm text-red-500";
+            messageEl.innerText = "LOGGING IN...", messageEl.className = "mt-5 text-sm text-purple-400";
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                let errorMsg = error.message.toUpperCase();
+                if (errorMsg.includes("INVALID")) errorMsg = "INCORRECT EMAIL OR PASSWORD.\n\nHINT: MUST BE 6+ CHARACTERS.";
+                messageEl.innerText = errorMsg, messageEl.className = "mt-5 text-sm text-red-500";
+            } else {
+                messageEl.innerText = "";
+                handleCheckUser();
             }
         }
 
         async function handleResetPasswordRequest() {
             const messageEl = document.getElementById('auth-message');
-            try {
-                if (!supabaseClient) throw new Error("Database connection error.");
-                const email = document.getElementById('email').value;
-                
-                if (!email) {
-                    messageEl.innerText = "PLEASE ENTER YOUR EMAIL ADDRESS ABOVE FIRST.";
-                    messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
-                    return;
-                }
-
-                messageEl.innerText = "SENDING RESET LINK... ⏳";
-                messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
-                
-                // Removed the forced redirect addition so it matches the Supabase whitelist
-                const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email);
-                
-                if (error) {
-                    messageEl.innerText = "ERROR: " + error.message.toUpperCase();
-                    messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide whitespace-pre-wrap";
-                } else {
-                    messageEl.innerText = "RESET LINK SENT! CHECK YOUR EMAIL.";
-                    messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
-                }
-            } catch (err) {
-                messageEl.innerText = "ERROR: " + err.message;
-                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide whitespace-pre-wrap";
-            }
+            const email = document.getElementById('email').value;
+            if (!email) return messageEl.innerText = "PLEASE ENTER EMAIL ABOVE.", messageEl.className = "mt-5 text-sm text-red-500";
+            messageEl.innerText = "SENDING LINK...", messageEl.className = "mt-5 text-sm text-purple-400";
+            // The ?reset=true ensures it forces the screen open
+            const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                redirectTo: 'https://snaplist-1xq3.onrender.com/?reset=true'
+            });
+            if (error) messageEl.innerText = "ERROR: " + error.message.toUpperCase(), messageEl.className = "mt-5 text-sm text-red-500";
+            else messageEl.innerText = "LINK SENT! CHECK EMAIL.", messageEl.className = "mt-5 text-sm text-green-400";
         }
 
         async function handleUpdatePassword() {
             const messageEl = document.getElementById('recovery-message');
-            try {
-                const newPassword = document.getElementById('new-password').value;
-                
-                if (!newPassword || newPassword.length < 6) {
-                    messageEl.innerText = "PASSWORD MUST BE AT LEAST 6 CHARACTERS LONG.";
-                    messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
-                    return;
-                }
-
-                messageEl.innerText = "UPDATING PASSWORD... ⏳";
-                messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
-                
-                const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
-                
-                if (error) {
-                    messageEl.innerText = "ERROR: " + error.message.toUpperCase();
-                    messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide whitespace-pre-wrap";
-                } else {
-                    messageEl.innerText = "SUCCESS! GOING TO DASHBOARD...";
-                    messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
-                    
-                    setTimeout(() => {
-                        window.location.href = 'https://snaplist-1xq3.onrender.com';
-                    }, 2000);
-                }
-            } catch (err) {
-                messageEl.innerText = "ERROR: " + err.message;
-                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide whitespace-pre-wrap";
+            const newPassword = document.getElementById('new-password').value;
+            if (newPassword.length < 6) return messageEl.innerText = "MUST BE 6+ CHARACTERS.", messageEl.className = "mt-5 text-sm text-red-500";
+            messageEl.innerText = "UPDATING...", messageEl.className = "mt-5 text-sm text-purple-400";
+            const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+            if (error) messageEl.innerText = "ERROR: " + error.message.toUpperCase(), messageEl.className = "mt-5 text-sm text-red-500";
+            else {
+                messageEl.innerText = "SUCCESS! GOING TO DASHBOARD...", messageEl.className = "mt-5 text-sm text-green-400";
+                setTimeout(() => window.location.href = 'https://snaplist-1xq3.onrender.com', 2000);
             }
         }
 
         async function handleLogout() {
-            if (supabaseClient) await supabaseClient.auth.signOut();
+            await supabaseClient.auth.signOut();
             handleCheckUser();
         }
 
+        // ---- APP FUNCTIONS ----
         async function handleCheckout() {
-            if (!currentUser) return alert("Please log in first!");
+            if (!currentUser) return alert("Log in first!");
             try {
                 const response = await fetch('/api/checkout', {
                     method: 'POST',
@@ -327,93 +332,54 @@
                     body: JSON.stringify({ user_id: currentUser.id })
                 });
                 const data = await response.json();
-                if (data.url) window.location.href = data.url; 
-                else alert("Error starting checkout");
-            } catch (err) {
-                alert("Payment system unavailable right now.");
-            }
+                if (data.url) window.location.href = data.url; else alert("Checkout error");
+            } catch (err) { alert("Payment system down."); }
         }
 
         function previewImage(event) {
             const reader = new FileReader();
-            reader.onload = function() {
-                const output = document.getElementById('image-preview');
-                output.src = reader.result;
-                output.classList.remove('hidden');
+            reader.onload = () => {
+                const out = document.getElementById('image-preview');
+                out.src = reader.result;
+                out.classList.remove('hidden');
             };
             if (event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
         }
 
-        function copySpecific(elementId, btnElement) {
-            const textToCopy = document.getElementById(elementId).innerText;
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                const originalText = btnElement.innerHTML;
-                const originalClasses = btnElement.className;
-                
-                btnElement.innerHTML = '✅ COPIED!';
-                btnElement.className = 'bg-green-500 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors';
-                
-                setTimeout(() => {
-                    btnElement.innerHTML = originalText;
-                    btnElement.className = originalClasses;
-                }, 2000);
+        function copySpecific(id, btn) {
+            navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => {
+                const orig = btn.innerHTML, cls = btn.className;
+                btn.innerHTML = '✅ COPIED!';
+                btn.className = 'bg-green-500 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors';
+                setTimeout(() => { btn.innerHTML = orig; btn.className = cls; }, 2000);
             });
         }
 
         async function handleGenerateListing() {
-            if (!currentUser) return alert("Please log in to generate a listing!");
-
-            const fileInput = document.getElementById('image-upload');
-            const categorySelect = document.getElementById('category-select');
-            const statusMsg = document.getElementById('status-message');
-            const smartResults = document.getElementById('smart-results');
+            if (!currentUser) return alert("Log in first!");
+            const file = document.getElementById('image-upload').files[0];
+            const cat = document.getElementById('category-select').value;
+            const stat = document.getElementById('status-message');
+            const res = document.getElementById('smart-results');
+            if (!file) return alert("Select an image!");
             
-            if (!fileInput.files.length) return alert("Please select an image first!");
+            const fd = new FormData(); fd.append('image', file); fd.append('category', cat); fd.append('user_id', currentUser.id);
+            stat.classList.remove('hidden'); res.classList.add('hidden');
+            stat.innerText = "ANALYZING... ⏳"; stat.className = "mt-8 p-6 bg-black text-purple-400 text-center";
             
-            const formData = new FormData();
-            formData.append('image', fileInput.files[0]);
-            formData.append('category', categorySelect.value);
-            formData.append('user_id', currentUser.id);
-
-            statusMsg.classList.remove('hidden');
-            smartResults.classList.add('hidden');
-            statusMsg.innerText = "ANALYZING IMAGE & GENERATING NICHE LISTING... ⏳";
-            statusMsg.className = "mt-8 p-6 border border-purple-800 rounded-md bg-black text-purple-400 font-bold font-mono text-sm shadow-inner text-center";
-
             try {
-                const response = await fetch('/api/generate-listing', {
-                    method: 'POST',
-                    body: formData
-                });
+                const response = await fetch('/api/generate-listing', { method: 'POST', body: fd });
                 const data = await response.json();
-                
                 if (data.result) {
                     try {
-                        let cleanJson = data.result.replace(/```json/gi, '').replace(/```/gi, '').trim();
-                        const parsed = JSON.parse(cleanJson);
-                        
-                        document.getElementById('out-title').innerText = parsed.title || "No title generated";
-                        document.getElementById('out-pricing').innerText = parsed.pricing || "Pricing unavailable";
-                        document.getElementById('out-condition').innerText = parsed.condition || "N/A";
-                        document.getElementById('out-ebay').innerText = parsed.ebay || "N/A";
-                        document.getElementById('out-facebook').innerText = parsed.facebook || "N/A";
-                        document.getElementById('out-poshmark').innerText = parsed.poshmark || "N/A";
-                        document.getElementById('out-tags').innerText = parsed.tags || "N/A";
-                        
-                        statusMsg.classList.add('hidden');
-                        smartResults.classList.remove('hidden');
-                        smartResults.classList.add('flex');
-                    } catch (parseError) {
-                        statusMsg.innerText = "🚨 Error formatting the response. Please try again.";
-                        statusMsg.className = "mt-8 p-6 border border-red-800 rounded-md bg-[#1a0505] text-red-400 font-bold font-mono text-sm shadow-[0_0_15px_rgba(255,0,0,0.2)] text-center";
-                    }
-                } else {
-                    statusMsg.innerText = "🚨 " + data.error;
-                    statusMsg.className = "mt-8 p-6 border border-red-800 rounded-md bg-[#1a0505] text-red-400 font-bold font-mono text-sm shadow-[0_0_15px_rgba(255,0,0,0.2)] text-center";
-                }
-            } catch (e) {
-                statusMsg.innerText = "A CONNECTION ERROR OCCURRED.";
-            }
+                        const parsed = JSON.parse(data.result.replace(/```json/gi, '').replace(/```/gi, '').trim());
+                        ['title', 'pricing', 'condition', 'ebay', 'facebook', 'poshmark', 'tags'].forEach(k => 
+                            document.getElementById('out-'+k).innerText = parsed[k] || "N/A"
+                        );
+                        stat.classList.add('hidden'); res.classList.remove('hidden'); res.classList.add('flex');
+                    } catch (e) { stat.innerText = "🚨 Formatting error.", stat.className = "mt-8 p-6 text-red-400 text-center"; }
+                } else { stat.innerText = "🚨 " + data.error, stat.className = "mt-8 p-6 text-red-400 text-center"; }
+            } catch (e) { stat.innerText = "CONNECTION ERROR."; }
         }
 
         handleCheckUser();
