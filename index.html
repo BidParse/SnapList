@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimpleList</title>
-    <!-- Tailwind CSS is loaded here to give it the dark mode styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -153,30 +152,34 @@
         async function handleCheckUser() {
             if (!supabaseClient) return;
 
-            // NEW BULLETPROOF CHECK: Force recovery screen if reset=true OR code is present
-            const urlParams = new URLSearchParams(window.location.search);
             const hash = window.location.hash;
+            const search = window.location.search;
             
-            if (urlParams.get('reset') === 'true' || urlParams.has('code') || (hash && hash.includes('recovery'))) {
+            // Supabase drops the token directly into the URL hash when returning from the email
+            const isRecovery = hash.includes('type=recovery') || hash.includes('access_token') || search.includes('code=');
+
+            if (isRecovery) {
                 document.getElementById('auth-section').classList.add('hidden');
                 document.getElementById('app-section').classList.add('hidden');
                 document.getElementById('recovery-section').classList.remove('hidden');
-                return; // Stop checking session and just let them type a new password
             }
 
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 currentUser = session.user;
-                if (document.getElementById('recovery-section').classList.contains('hidden')) {
+                if (!isRecovery) {
                     document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('recovery-section').classList.add('hidden');
                     document.getElementById('app-section').classList.remove('hidden');
                     document.getElementById('user-email').innerText = currentUser.email;
                 }
             } else {
                 currentUser = null;
-                document.getElementById('auth-section').classList.remove('hidden');
-                document.getElementById('app-section').classList.add('hidden');
-                document.getElementById('recovery-section').classList.add('hidden');
+                if (!isRecovery) {
+                    document.getElementById('auth-section').classList.remove('hidden');
+                    document.getElementById('app-section').classList.add('hidden');
+                    document.getElementById('recovery-section').classList.add('hidden');
+                }
             }
         }
 
@@ -261,10 +264,8 @@
                 messageEl.innerText = "SENDING RESET LINK... ⏳";
                 messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
                 
-                // We add ?reset=true here so the email link forces the screen to show
-                const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: 'https://snaplist-1xq3.onrender.com/?reset=true'
-                });
+                // Removed the forced redirect addition so it matches the Supabase whitelist
+                const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email);
                 
                 if (error) {
                     messageEl.innerText = "ERROR: " + error.message.toUpperCase();
@@ -303,7 +304,6 @@
                     messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
                     
                     setTimeout(() => {
-                        // Clear the URL and reload the app so the reset flag is gone
                         window.location.href = 'https://snaplist-1xq3.onrender.com';
                     }, 2000);
                 }
