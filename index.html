@@ -44,7 +44,6 @@
             <div>
                 <h2 class="text-xl mb-4 font-bold text-purple-400 uppercase tracking-wide">New Listing</h2>
                 
-                <!-- NEW: Niche Intelligence Dropdown -->
                 <select id="category-select" class="w-full bg-black border border-purple-700 text-[#C0C0C0] p-4 mb-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-400 font-bold uppercase tracking-wide cursor-pointer hover:border-purple-500 transition-colors">
                     <option value="General">Auto-Detect (General Listing)</option>
                     <option value="Sneakers & Shoes">Sneakers & Shoes</option>
@@ -54,9 +53,12 @@
                     <option value="Clothing & Apparel">Clothing & Apparel</option>
                 </select>
 
-                <div class="border-2 border-dashed border-purple-700 hover:border-purple-400 transition-colors bg-black p-10 text-center rounded-md mb-6">
-                    <input type="file" id="image-upload" accept="image/*" class="w-full cursor-pointer text-[#C0C0C0] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-purple-900 file:text-white hover:file:bg-purple-700 transition-colors">
+                <!-- UPDATED: Upload Box with Image Preview -->
+                <div class="border-2 border-dashed border-purple-700 hover:border-purple-400 transition-colors bg-black p-8 text-center rounded-md mb-6 flex flex-col items-center justify-center min-h-[200px]">
+                    <img id="image-preview" class="hidden max-h-64 object-contain mb-6 rounded-md shadow-[0_0_15px_rgba(147,51,234,0.2)]">
+                    <input type="file" id="image-upload" accept="image/*" onchange="previewImage(event)" class="w-full cursor-pointer text-[#C0C0C0] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-purple-900 file:text-white hover:file:bg-purple-700 transition-colors">
                 </div>
+                
                 <button onclick="generateListing()" class="bg-purple-600 text-white px-4 py-4 rounded-md w-full font-black text-lg uppercase tracking-wider hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(128,0,128,0.4)]">Generate AI Listing</button>
             </div>
 
@@ -160,6 +162,19 @@
             }
         }
 
+        // NEW: Live Image Preview Function
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const output = document.getElementById('image-preview');
+                output.src = reader.result;
+                output.classList.remove('hidden');
+            };
+            if (event.target.files[0]) {
+                reader.readAsDataURL(event.target.files[0]);
+            }
+        }
+
         async function generateListing() {
             const fileInput = document.getElementById('image-upload');
             const categorySelect = document.getElementById('category-select');
@@ -171,7 +186,7 @@
             
             const formData = new FormData();
             formData.append('image', fileInput.files[0]);
-            formData.append('category', categorySelect.value); // Sends the chosen category to the backend
+            formData.append('category', categorySelect.value);
 
             resultBox.classList.remove('hidden');
             resultBox.innerText = "ANALYZING IMAGE & GENERATING NICHE LISTING... ⏳";
