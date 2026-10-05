@@ -20,13 +20,19 @@
         <div id="auth-section" class="mb-8 pb-8 border-b border-purple-900/50">
             <h2 class="text-xl mb-4 font-bold text-purple-400 uppercase tracking-wide">Account Access</h2>
             <input type="email" id="email" placeholder="Email Address" class="bg-black border border-purple-800 text-white p-4 w-full mb-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
-            <input type="password" id="password" placeholder="Password" class="bg-black border border-purple-800 text-white p-4 w-full mb-6 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
+            
+            <!-- We adjusted the margin here so the hint text sits snug beneath it -->
+            <input type="password" id="password" placeholder="Password" class="bg-black border border-purple-800 text-white p-4 w-full mb-2 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
+            
+            <!-- NEW: Password requirements hint -->
+            <p class="text-xs text-gray-500 mb-6 text-left pl-1">Requirement: Password must be at least 6 characters long.</p>
+            
             <div class="flex gap-4">
                 <button onclick="login()" class="bg-purple-600 text-white font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-500 transition-colors duration-200">Login</button>
                 <button onclick="signUp()" class="bg-black border border-purple-600 text-purple-500 font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-900/30 transition-colors duration-200">Sign Up</button>
             </div>
-            <!-- Error and success messages will properly display here now -->
-            <p id="auth-message" class="mt-5 text-sm text-center font-bold"></p>
+            <!-- Error and success messages -->
+            <p id="auth-message" class="mt-5 text-sm text-center font-bold whitespace-pre-wrap"></p>
         </div>
 
         <div id="app-section" class="hidden">
@@ -93,203 +99,3 @@
                 <!-- Platform: Facebook -->
                 <div class="p-6 border border-blue-400 bg-black rounded-md">
                     <h4 class="text-xs text-blue-300 font-bold uppercase tracking-widest mb-2">Facebook / OfferUp</h4>
-                    <p id="out-facebook" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
-                    <button onclick="copySpecific('out-facebook', this)" class="bg-blue-500 text-white px-3 py-3 rounded text-sm font-bold uppercase hover:bg-blue-400 w-full transition-colors">Copy Facebook Description</button>
-                </div>
-
-                <!-- Platform: Poshmark -->
-                <div class="p-6 border border-pink-600 bg-black rounded-md">
-                    <h4 class="text-xs text-pink-400 font-bold uppercase tracking-widest mb-2">Poshmark / Depop</h4>
-                    <p id="out-poshmark" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
-                    <button onclick="copySpecific('out-poshmark', this)" class="bg-pink-600 text-white px-3 py-3 rounded text-sm font-bold uppercase hover:bg-pink-500 w-full transition-colors">Copy Poshmark Description</button>
-                </div>
-
-                <!-- Tags -->
-                <div class="p-6 border border-gray-600 bg-black rounded-md">
-                    <h4 class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2">SEO Tags</h4>
-                    <p id="out-tags" class="text-sm text-gray-300 mb-4"></p>
-                    <button onclick="copySpecific('out-tags', this)" class="bg-gray-700 text-white px-3 py-2 rounded text-xs font-bold uppercase hover:bg-gray-600 w-full transition-colors">Copy Tags</button>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const SUPABASE_URL = 'https://wzmaaahyovsroeyjsmst.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_7HpG3z67MVak6k9csFWmKQ_7MLqrMyP'; 
-        
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        let currentUser = null;
-
-        async function checkUser() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
-                currentUser = session.user;
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('app-section').classList.remove('hidden');
-                document.getElementById('user-email').innerText = currentUser.email;
-            } else {
-                currentUser = null;
-                document.getElementById('auth-section').classList.remove('hidden');
-                document.getElementById('app-section').classList.add('hidden');
-            }
-        }
-
-        async function signUp() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const messageEl = document.getElementById('auth-message');
-            
-            if (!email || !password) {
-                messageEl.innerText = "Please enter an email and password.";
-                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500";
-                return;
-            }
-
-            messageEl.innerText = "SIGNING UP...";
-            messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
-            
-            const { data, error } = await supabaseClient.auth.signUp({ email, password });
-            
-            if (error) {
-                messageEl.innerText = error.message.toUpperCase();
-                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
-            } else {
-                messageEl.innerText = "SUCCESS! PLEASE LOG IN.";
-                messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
-            }
-        }
-
-        async function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const messageEl = document.getElementById('auth-message');
-            
-            if (!email || !password) {
-                messageEl.innerText = "Please enter an email and password.";
-                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500";
-                return;
-            }
-
-            messageEl.innerText = "LOGGING IN...";
-            messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
-            
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            
-            if (error) {
-                messageEl.innerText = error.message.toUpperCase();
-                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
-            } else {
-                messageEl.innerText = "";
-                checkUser();
-            }
-        }
-
-        async function logout() {
-            await supabaseClient.auth.signOut();
-            checkUser();
-        }
-
-        async function checkout() {
-            if (!currentUser) return alert("Please log in first!");
-            try {
-                const response = await fetch('/api/checkout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUser.id })
-                });
-                const data = await response.json();
-                if (data.url) window.location.href = data.url; 
-                else alert("Error starting checkout");
-            } catch (err) {
-                alert("Payment system unavailable right now.");
-            }
-        }
-
-        function previewImage(event) {
-            const reader = new FileReader();
-            reader.onload = function() {
-                const output = document.getElementById('image-preview');
-                output.src = reader.result;
-                output.classList.remove('hidden');
-            };
-            if (event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
-        }
-
-        function copySpecific(elementId, btnElement) {
-            const textToCopy = document.getElementById(elementId).innerText;
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                const originalText = btnElement.innerHTML;
-                const originalClasses = btnElement.className;
-                
-                btnElement.innerHTML = '✅ COPIED!';
-                btnElement.className = 'bg-green-500 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors';
-                
-                setTimeout(() => {
-                    btnElement.innerHTML = originalText;
-                    btnElement.className = originalClasses;
-                }, 2000);
-            });
-        }
-
-        async function generateListing() {
-            if (!currentUser) return alert("Please log in to generate a listing!");
-
-            const fileInput = document.getElementById('image-upload');
-            const categorySelect = document.getElementById('category-select');
-            const statusMsg = document.getElementById('status-message');
-            const smartResults = document.getElementById('smart-results');
-            
-            if (!fileInput.files.length) return alert("Please select an image first!");
-            
-            const formData = new FormData();
-            formData.append('image', fileInput.files[0]);
-            formData.append('category', categorySelect.value);
-            formData.append('user_id', currentUser.id);
-
-            statusMsg.classList.remove('hidden');
-            smartResults.classList.add('hidden');
-            statusMsg.innerText = "ANALYZING IMAGE & GENERATING NICHE LISTING... ⏳";
-            statusMsg.className = "mt-8 p-6 border border-purple-800 rounded-md bg-black text-purple-400 font-bold font-mono text-sm shadow-inner text-center";
-
-            try {
-                const response = await fetch('/api/generate-listing', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
-                
-                if (data.result) {
-                    try {
-                        let cleanJson = data.result.replace(/```json/gi, '').replace(/```/gi, '').trim();
-                        const parsed = JSON.parse(cleanJson);
-                        
-                        document.getElementById('out-title').innerText = parsed.title || "No title generated";
-                        document.getElementById('out-pricing').innerText = parsed.pricing || "Pricing unavailable";
-                        document.getElementById('out-condition').innerText = parsed.condition || "N/A";
-                        document.getElementById('out-ebay').innerText = parsed.ebay || "N/A";
-                        document.getElementById('out-facebook').innerText = parsed.facebook || "N/A";
-                        document.getElementById('out-poshmark').innerText = parsed.poshmark || "N/A";
-                        document.getElementById('out-tags').innerText = parsed.tags || "N/A";
-                        
-                        statusMsg.classList.add('hidden');
-                        smartResults.classList.remove('hidden');
-                        smartResults.classList.add('flex');
-                    } catch (parseError) {
-                        statusMsg.innerText = "🚨 Error formatting the response. Please try again.";
-                        statusMsg.className = "mt-8 p-6 border border-red-800 rounded-md bg-[#1a0505] text-red-400 font-bold font-mono text-sm shadow-[0_0_15px_rgba(255,0,0,0.2)] text-center";
-                    }
-                } else {
-                    statusMsg.innerText = "🚨 " + data.error;
-                    statusMsg.className = "mt-8 p-6 border border-red-800 rounded-md bg-[#1a0505] text-red-400 font-bold font-mono text-sm shadow-[0_0_15px_rgba(255,0,0,0.2)] text-center";
-                }
-            } catch (e) {
-                statusMsg.innerText = "A CONNECTION ERROR OCCURRED.";
-            }
-        }
-
-        checkUser();
-    </script>
-</body>
-</html>
