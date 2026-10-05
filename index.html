@@ -4,27 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimpleList</title>
-    <!-- Tailwind CSS for Dark Mode Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-black text-white p-4 sm:p-8 font-sans min-h-screen flex flex-col items-center">
     <div class="w-full max-w-2xl bg-[#111111] border border-purple-900 p-6 sm:p-10 rounded-xl shadow-[0_0_20px_rgba(128,0,128,0.3)]">
         
-        <!-- HEADER LOGO -->
         <div class="text-center mb-8">
             <h1 class="text-5xl sm:text-6xl font-black tracking-wide mb-4"><span class="text-purple-600">Simple</span><span class="text-white">List</span></h1>
             <p class="text-xs text-[#C0C0C0] tracking-widest uppercase">AI Marketplace Generator</p>
         </div>
 
-        <!-- MAIN NAVIGATION (Hidden until logged in) -->
         <div id="main-nav" class="hidden flex gap-2 mb-8 p-1 bg-black border border-purple-900/50 rounded-md">
             <button onclick="showSection('generator-section')" id="tab-generator" class="flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors">Generator</button>
             <button onclick="showSection('profile-section')" id="tab-profile" class="flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors">My Profile</button>
             <button onclick="handleLogout()" class="flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-red-900/30 text-red-400 transition-colors">Logout</button>
         </div>
 
-        <!-- 1. AUTHENTICATION SECTION (Login / Sign Up) -->
         <div id="auth-section" class="mb-8 pb-8 text-center">
             <h2 class="text-xl mb-6 font-bold text-purple-400 uppercase tracking-wide">Account Access</h2>
             <input type="email" id="email" placeholder="Email Address" class="bg-black border border-purple-800 text-white p-4 w-full mb-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
@@ -42,7 +38,6 @@
             <p id="auth-message" class="mt-5 text-sm font-bold whitespace-pre-wrap"></p>
         </div>
 
-        <!-- 2. PASSWORD RECOVERY SECTION (Triggered via email link) -->
         <div id="recovery-section" class="hidden mb-8 text-center border border-green-900 bg-[#051105] p-8 rounded-md shadow-[0_0_15px_rgba(0,255,0,0.1)]">
             <h2 class="text-2xl mb-2 font-bold text-green-400 uppercase tracking-wide">Reset Password</h2>
             <p class="text-sm text-green-200/70 mb-6">Enter your new secure password below.</p>
@@ -54,10 +49,8 @@
             <p id="recovery-message" class="mt-5 text-sm font-bold whitespace-pre-wrap"></p>
         </div>
 
-        <!-- 3. USER PROFILE DASHBOARD -->
         <div id="profile-section" class="hidden">
             <div class="p-6 bg-black border border-purple-800 rounded-md mb-8 flex flex-col items-center">
-                <!-- Auto-Generated Avatar based on Email -->
                 <img id="profile-avatar" src="" alt="User Avatar" class="w-24 h-24 rounded-full bg-purple-900 mb-4 border-2 border-purple-500 shadow-[0_0_15px_rgba(147,51,234,0.4)]">
                 <h3 class="text-lg font-bold text-white tracking-wide" id="profile-email-display">user@email.com</h3>
                 <p class="text-xs text-purple-400 uppercase tracking-widest mt-1 mb-6">SimpleList Member</p>
@@ -71,7 +64,6 @@
                 </div>
             </div>
 
-            <!-- Internal Password Change -->
             <div class="p-6 bg-[#0a0a0a] border border-gray-800 rounded-md">
                 <h4 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-4">Update Password</h4>
                 <input type="password" id="internal-new-password" placeholder="New Password" class="bg-black border border-gray-700 text-white p-3 w-full mb-3 rounded-md focus:outline-none focus:border-purple-500 text-sm">
@@ -80,14 +72,13 @@
             </div>
         </div>
 
-        <!-- 4. GENERATOR SECTION (The main app) -->
         <div id="generator-section" class="hidden">
             <div class="mb-10 p-6 bg-gradient-to-r from-purple-900/40 to-black border border-purple-700 rounded-md flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div>
                     <h3 class="font-black text-xl text-white uppercase tracking-wider">SimpleList <span class="text-purple-400">Pro</span></h3>
                     <p class="text-sm text-[#C0C0C0] mt-1">Unlock unlimited AI generations.</p>
                 </div>
-                <button onclick="handleCheckout()" class="bg-white text-black px-6 py-3 rounded-md font-black uppercase tracking-wider hover:bg-[#C0C0C0] transition-colors whitespace-nowrap shadow-[0_0_15px_rgba(255,255,255,0.2)]">Upgrade - $9.99</button>
+                <button id="checkout-btn" onclick="handleCheckout(event)" class="bg-white text-black px-6 py-3 rounded-md font-black uppercase tracking-wider hover:bg-[#C0C0C0] transition-colors whitespace-nowrap shadow-[0_0_15px_rgba(255,255,255,0.2)]">Upgrade - $9.99</button>
             </div>
 
             <div>
@@ -111,7 +102,6 @@
             <div id="status-message" class="mt-8 hidden p-6 border border-purple-800 rounded-md bg-black text-white font-mono text-sm shadow-inner text-center"></div>
 
             <div id="smart-results" class="mt-8 hidden flex-col gap-6">
-                <!-- Dynamic Results Cards -->
                 <div class="p-6 border border-purple-600 bg-black rounded-md">
                     <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Title & Pricing</h4>
                     <p id="out-title" class="font-bold text-lg mb-2 text-white"></p>
@@ -157,12 +147,10 @@
             console.error("Supabase failed to load", e);
         }
 
-        // Section Toggler
         function showSection(sectionId) {
             document.getElementById('generator-section').classList.add('hidden');
             document.getElementById('profile-section').classList.add('hidden');
             
-            // Highlight active tab
             document.getElementById('tab-generator').className = 'flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors';
             document.getElementById('tab-profile').className = 'flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors';
             
@@ -192,7 +180,6 @@
             if (session) {
                 currentUser = session.user;
                 
-                // Populate Profile
                 document.getElementById('profile-email-display').innerText = currentUser.email;
                 document.getElementById('profile-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.email}&backgroundColor=222222`;
                 if (currentUser.user_metadata && currentUser.user_metadata.bio) {
@@ -204,7 +191,7 @@
                 document.getElementById('main-nav').classList.remove('hidden');
                 document.getElementById('main-nav').classList.add('flex');
                 
-                showSection('generator-section'); // Default view
+                showSection('generator-section'); 
             } else {
                 currentUser = null;
                 document.getElementById('main-nav').classList.add('hidden');
@@ -215,7 +202,6 @@
             }
         }
 
-        // ---- PROFILE FUNCTIONS ----
         async function handleSaveProfile() {
             const bioText = document.getElementById('profile-bio').value;
             const btn = event.target;
@@ -261,7 +247,6 @@
             }
         }
 
-        // ---- AUTH FUNCTIONS ----
         async function handleSignUp() {
             const messageEl = document.getElementById('auth-message');
             const email = document.getElementById('email').value;
@@ -321,9 +306,16 @@
             handleCheckUser();
         }
 
-        // ---- APP FUNCTIONS ----
-        async function handleCheckout() {
-            if (!currentUser) return alert("Log in first!");
+        async function handleCheckout(event) {
+            if (!currentUser) return;
+            
+            const btn = event.target;
+            const originalText = btn.innerText;
+            const originalClass = btn.className;
+            
+            btn.innerText = "LOADING...";
+            btn.className = "bg-yellow-500 text-black px-6 py-3 rounded-md font-black uppercase tracking-wider whitespace-nowrap";
+            
             try {
                 const response = await fetch('/api/checkout', {
                     method: 'POST',
@@ -331,8 +323,19 @@
                     body: JSON.stringify({ user_id: currentUser.id })
                 });
                 const data = await response.json();
-                if (data.url) window.location.href = data.url; else alert("Checkout error");
-            } catch (err) { alert("Payment system down."); }
+                
+                if (data.url) {
+                    window.location.href = data.url; 
+                } else {
+                    btn.innerText = "STRIPE KEY MISSING";
+                    btn.className = "bg-red-600 text-white px-6 py-3 rounded-md font-black uppercase tracking-wider whitespace-nowrap shadow-[0_0_15px_rgba(255,0,0,0.5)]";
+                    setTimeout(() => { btn.innerText = originalText; btn.className = originalClass; }, 3000);
+                }
+            } catch (err) { 
+                btn.innerText = "SERVER CRASH";
+                btn.className = "bg-red-600 text-white px-6 py-3 rounded-md font-black uppercase tracking-wider whitespace-nowrap shadow-[0_0_15px_rgba(255,0,0,0.5)]";
+                setTimeout(() => { btn.innerText = originalText; btn.className = originalClass; }, 3000);
+            }
         }
 
         function previewImage(event) {
@@ -355,7 +358,7 @@
         }
 
         async function handleGenerateListing() {
-            if (!currentUser) return alert("Log in first!");
+            if (!currentUser) return;
             const file = document.getElementById('image-upload').files[0];
             const cat = document.getElementById('category-select').value;
             const stat = document.getElementById('status-message');
@@ -372,7 +375,6 @@
                 const data = await response.json();
                 if (data.result) {
                     try {
-                        // The Bulletproof Data Extractor
                         let rawText = data.result;
                         let jsonStart = rawText.indexOf('{');
                         let jsonEnd = rawText.lastIndexOf('}');
@@ -390,7 +392,7 @@
                         res.classList.remove('hidden'); 
                         res.classList.add('flex');
                     } catch (e) { 
-                        stat.innerText = "🚨 Formatting error. The AI included extra conversational text. Please hit 'Generate' again to fix it!"; 
+                        stat.innerText = "🚨 Formatting error. Please hit 'Generate' again!"; 
                         stat.className = "mt-8 p-6 bg-[#1a0505] text-red-400 font-bold font-mono text-sm border border-red-800 rounded-md text-center shadow-[0_0_15px_rgba(255,0,0,0.2)]"; 
                     }
                 } else { 
