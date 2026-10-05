@@ -140,25 +140,38 @@
             console.error("Supabase failed to load", e);
         }
 
+        if (supabaseClient) {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'PASSWORD_RECOVERY') {
+                    document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('app-section').classList.add('hidden');
+                    document.getElementById('recovery-section').classList.remove('hidden');
+                }
+            });
+        }
+
         async function handleCheckUser() {
             if (!supabaseClient) return;
 
-            // BULLETPROOF RECOVERY CHECK: Look directly at the web address
+            // NEW BULLETPROOF CHECK: Force recovery screen if reset=true OR code is present
+            const urlParams = new URLSearchParams(window.location.search);
             const hash = window.location.hash;
-            if (hash && (hash.includes('type=recovery') || hash.includes('recovery'))) {
+            
+            if (urlParams.get('reset') === 'true' || urlParams.has('code') || (hash && hash.includes('recovery'))) {
                 document.getElementById('auth-section').classList.add('hidden');
                 document.getElementById('app-section').classList.add('hidden');
                 document.getElementById('recovery-section').classList.remove('hidden');
-                return; // Stop running this function so it doesn't try to log them in yet
+                return; // Stop checking session and just let them type a new password
             }
 
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 currentUser = session.user;
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('recovery-section').classList.add('hidden');
-                document.getElementById('app-section').classList.remove('hidden');
-                document.getElementById('user-email').innerText = currentUser.email;
+                if (document.getElementById('recovery-section').classList.contains('hidden')) {
+                    document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('app-section').classList.remove('hidden');
+                    document.getElementById('user-email').innerText = currentUser.email;
+                }
             } else {
                 currentUser = null;
                 document.getElementById('auth-section').classList.remove('hidden');
@@ -248,8 +261,9 @@
                 messageEl.innerText = "SENDING RESET LINK... ⏳";
                 messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
                 
+                // We add ?reset=true here so the email link forces the screen to show
                 const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: 'https://snaplist-1xq3.onrender.com'
+                    redirectTo: 'https://snaplist-1xq3.onrender.com/?reset=true'
                 });
                 
                 if (error) {
@@ -289,9 +303,8 @@
                     messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
                     
                     setTimeout(() => {
-                        window.location.hash = ''; // Clear the secret code from the URL
-                        document.getElementById('recovery-section').classList.add('hidden');
-                        document.getElementById('app-section').classList.remove('hidden');
+                        // Clear the URL and reload the app so the reset flag is gone
+                        window.location.href = 'https://snaplist-1xq3.onrender.com';
                     }, 2000);
                 }
             } catch (err) {
