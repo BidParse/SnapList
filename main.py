@@ -31,7 +31,8 @@ if SUPABASE_URL and SUPABASE_KEY:
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 if STRIPE_SECRET_KEY:
-    stripe.api_key = STRIPE_SECRET_KEY
+    # Ensure there are no accidental spaces or newline characters in the key
+    stripe.api_key = STRIPE_SECRET_KEY.strip()
 
 gemini_client = None
 if GEMINI_API_KEY:
@@ -63,7 +64,6 @@ async def generate_listing(
     if not user_id or not supabase:
         return JSONResponse(content={"error": "Please log in to generate listings."}, status_code=401)
         
-    # Paywall Logic
     try:
         profile_response = supabase.table("profiles").select("is_pro, generation_count").eq("id", user_id).execute()
         if not profile_response.data:
@@ -95,7 +95,6 @@ async def generate_listing(
         
         niche_focus = category_instructions.get(category, category_instructions["General"])
         
-        # NEW JSON PROMPT
         prompt = f"""You are an elite e-commerce copywriter.
         Category: {category}. 
         CRITICAL NICHE INSTRUCTION: {niche_focus}
@@ -147,12 +146,14 @@ async def create_checkout_session(request: Request):
             }],
             mode='payment',
             allow_promotion_codes=True,
-            success_url=str(request.base_url) + "?success=true",
-            cancel_url=str(request.base_url) + "?canceled=true",
+            # HARDCODED URLS TO BYPASS RENDER PROXY BUGS
+            success_url="[https://snaplist-1xq3.onrender.com/?success=true](https://snaplist-1xq3.onrender.com/?success=true)",
+            cancel_url="[https://snaplist-1xq3.onrender.com/?canceled=true](https://snaplist-1xq3.onrender.com/?canceled=true)",
             client_reference_id=user_id
         )
         return {"url": session.url}
     except Exception as e:
+        print("Stripe Error:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/webhook/stripe")
