@@ -1,6 +1,6 @@
 import os
 import stripe
-from fastapi import FastAPI, Request, HTTPException, UploadFile, File
+from fastapi import FastAPI, Request, HTTPException, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
@@ -52,17 +52,31 @@ async def serve_logo():
     return HTMLResponse(status_code=404, content="Logo not found")
 
 @app.post("/api/generate-listing")
-async def generate_listing(image: UploadFile = File(...)):
+async def generate_listing(image: UploadFile = File(...), category: str = Form("General")):
     if not gemini_client:
         raise HTTPException(status_code=500, detail="Gemini API Key missing")
     
     try:
         image_data = await image.read()
         
+        # Niche Intelligence Routing
+        category_instructions = {
+            "Sneakers & Shoes": "Focus heavily on colorway, size tags, visible wear on outsoles/midsoles, authenticity indicators, and box condition. Mention if it looks like a retro or highly sought-after release.",
+            "Trading Cards & Collectibles": "Act as a card grader. Focus tightly on centering, corner sharpness, edge wear, surface condition, and potential grading value (PSA/Beckett). Note parallels or holos.",
+            "Electronics & Computers": "Focus on identifying make, model, specs (RAM, storage, processor if identifiable), ports, and visible physical condition. Note if testing is required.",
+            "Vehicles & Auto Parts": "Identify the vehicle part or model. Focus on compatibility, visible wear, OEM markers, and functional condition for mechanics or gearheads.",
+            "Clothing & Apparel": "Focus on brand, aesthetic style, visible size, material quality, and measurements. Note any fading, pilling, or stains.",
+            "General": "Provide a comprehensive breakdown of the item's visual condition and standard features."
+        }
+        
+        niche_focus = category_instructions.get(category, category_instructions["General"])
+        
         # The Elite Cross-Listing Super Prompt
-        prompt = """You are an elite e-commerce copywriter, appraiser, and cross-listing expert. Analyze this product image and generate a master listing package designed to maximize sales across multiple platforms.
+        prompt = f"""You are an elite e-commerce copywriter, appraiser, and cross-listing expert. 
+        The user has categorized this item as: {category}. 
+        CRITICAL NICHE INSTRUCTION: {niche_focus}
 
-        Format the output clearly with the following sections and spacing so the user can easily copy and paste what they need:
+        Analyze this product image and generate a master listing package designed to maximize sales across multiple platforms. Format the output clearly with the following sections and spacing:
 
         🏆 MASTER TITLE
         (Provide a highly-searchable, 80-character max SEO title including brand, model, color, and size if applicable)
