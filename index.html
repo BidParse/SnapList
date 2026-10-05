@@ -3,28 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Forces mobile browsers to drop the old cached code -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>SimpleList</title>
-    <!-- Tailwind CSS for Dark Mode Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-black text-white p-4 sm:p-8 font-sans min-h-screen flex flex-col items-center">
     <div class="w-full max-w-2xl bg-[#111111] border border-purple-900 p-6 sm:p-10 rounded-xl shadow-[0_0_20px_rgba(128,0,128,0.3)]">
         
-        <!-- HEADER LOGO -->
         <div class="text-center mb-8">
             <h1 class="text-5xl sm:text-6xl font-black tracking-wide mb-4"><span class="text-purple-600">Simple</span><span class="text-white">List</span></h1>
             <p class="text-xs text-[#C0C0C0] tracking-widest uppercase">AI Marketplace Generator</p>
         </div>
 
-        <!-- MAIN NAVIGATION (Hidden until logged in) -->
         <div id="main-nav" class="hidden flex gap-2 mb-8 p-1 bg-black border border-purple-900/50 rounded-md">
             <button onclick="showSection('generator-section')" id="tab-generator" class="flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors">Generator</button>
             <button onclick="showSection('profile-section')" id="tab-profile" class="flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors">My Profile</button>
             <button onclick="handleLogout()" class="flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-red-900/30 text-red-400 transition-colors">Logout</button>
         </div>
 
-        <!-- 1. AUTHENTICATION SECTION (Login / Sign Up) -->
         <div id="auth-section" class="mb-8 pb-8 text-center">
             <h2 class="text-xl mb-6 font-bold text-purple-400 uppercase tracking-wide">Account Access</h2>
             <input type="email" id="email" placeholder="Email Address" class="bg-black border border-purple-800 text-white p-4 w-full mb-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
@@ -42,7 +42,6 @@
             <p id="auth-message" class="mt-5 text-sm font-bold whitespace-pre-wrap"></p>
         </div>
 
-        <!-- 2. PASSWORD RECOVERY SECTION (Triggered via email link) -->
         <div id="recovery-section" class="hidden mb-8 text-center border border-green-900 bg-[#051105] p-8 rounded-md shadow-[0_0_15px_rgba(0,255,0,0.1)]">
             <h2 class="text-2xl mb-2 font-bold text-green-400 uppercase tracking-wide">Reset Password</h2>
             <p class="text-sm text-green-200/70 mb-6">Enter your new secure password below.</p>
@@ -54,10 +53,8 @@
             <p id="recovery-message" class="mt-5 text-sm font-bold whitespace-pre-wrap"></p>
         </div>
 
-        <!-- 3. USER PROFILE DASHBOARD -->
         <div id="profile-section" class="hidden">
             <div class="p-6 bg-black border border-purple-800 rounded-md mb-8 flex flex-col items-center">
-                <!-- Auto-Generated Avatar based on Email -->
                 <img id="profile-avatar" src="" alt="User Avatar" class="w-24 h-24 rounded-full bg-purple-900 mb-4 border-2 border-purple-500 shadow-[0_0_15px_rgba(147,51,234,0.4)]">
                 <h3 class="text-lg font-bold text-white tracking-wide" id="profile-email-display">user@email.com</h3>
                 <p class="text-xs text-purple-400 uppercase tracking-widest mt-1 mb-6">SimpleList Member</p>
@@ -71,7 +68,6 @@
                 </div>
             </div>
 
-            <!-- Internal Password Change -->
             <div class="p-6 bg-[#0a0a0a] border border-gray-800 rounded-md">
                 <h4 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-4">Update Password</h4>
                 <input type="password" id="internal-new-password" placeholder="New Password" class="bg-black border border-gray-700 text-white p-3 w-full mb-3 rounded-md focus:outline-none focus:border-purple-500 text-sm">
@@ -80,7 +76,6 @@
             </div>
         </div>
 
-        <!-- 4. GENERATOR SECTION (The main app) -->
         <div id="generator-section" class="hidden">
             <div class="mb-10 p-6 bg-gradient-to-r from-purple-900/40 to-black border border-purple-700 rounded-md flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div>
@@ -111,7 +106,6 @@
             <div id="status-message" class="mt-8 hidden p-6 border border-purple-800 rounded-md bg-black text-white font-mono text-sm shadow-inner text-center"></div>
 
             <div id="smart-results" class="mt-8 hidden flex-col gap-6">
-                <!-- Dynamic Results Cards -->
                 <div class="p-6 border border-purple-600 bg-black rounded-md">
                     <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Title & Pricing</h4>
                     <p id="out-title" class="font-bold text-lg mb-2 text-white"></p>
@@ -186,92 +180,344 @@
                 return; 
             }
 
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
-                currentUser = session.user;
-                
-                document.getElementById('profile-email-display').innerText = currentUser.email;
-                document.getElementById('profile-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.email}&backgroundColor=222222`;
-                if (currentUser.user_metadata && currentUser.user_metadata.bio) {
-                    document.getElementById('profile-bio').value = currentUser.user_metadata.bio;
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    currentUser = session.user;
+                    
+                    document.getElementById('profile-email-display').innerText = currentUser.email;
+                    document.getElementById('profile-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.email}&backgroundColor=222222`;
+                    if (currentUser.user_metadata && currentUser.user_metadata.bio) {
+                        document.getElementById('profile-bio').value = currentUser.user_metadata.bio;
+                    }
+
+                    document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('recovery-section').classList.add('hidden');
+                    document.getElementById('main-nav').classList.remove('hidden');
+                    document.getElementById('main-nav').classList.add('flex');
+                    
+                    showSection('generator-section'); 
+                } else {
+                    currentUser = null;
+                    document.getElementById('main-nav').classList.add('hidden');
+                    document.getElementById('generator-section').classList.add('hidden');
+                    document.getElementById('profile-section').classList.add('hidden');
+                    document.getElementById('recovery-section').classList.add('hidden');
+                    document.getElementById('auth-section').classList.remove('hidden');
                 }
+            } catch (err) {
+                console.error("Session check failed", err);
+            }
+        }
 
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('recovery-section').classList.add('hidden');
-                document.getElementById('main-nav').classList.remove('hidden');
-                document.getElementById('main-nav').classList.add('flex');
+        async function handleLogin() {
+            const messageEl = document.getElementById('auth-message');
+            try {
+                if (!supabaseClient) throw new Error("Database connection blocked by browser.");
                 
-                showSection('generator-section'); 
-            } else {
-                currentUser = null;
-                document.getElementById('main-nav').classList.add('hidden');
-                document.getElementById('generator-section').classList.add('hidden');
-                document.getElementById('profile-section').classList.add('hidden');
-                document.getElementById('recovery-section').classList.add('hidden');
-                document.getElementById('auth-section').classList.remove('hidden');
-            }
-        }
-
-        async function handleSaveProfile() {
-            const bioText = document.getElementById('profile-bio').value;
-            const btn = event.target;
-            const originalText = btn.innerText;
-            
-            btn.innerText = "SAVING...";
-            const { data, error } = await supabaseClient.auth.updateUser({
-                data: { bio: bioText }
-            });
-            
-            if (!error) {
-                btn.className = "bg-green-600 text-white px-4 py-2 rounded text-xs font-bold uppercase w-full transition-colors border border-green-500";
-                btn.innerText = "SAVED!";
-                setTimeout(() => {
-                    btn.className = "bg-purple-900 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-purple-700 w-full transition-colors border border-purple-700";
-                    btn.innerText = originalText;
-                }, 2000);
-            }
-        }
-
-        async function handleInternalPasswordUpdate() {
-            const msgEl = document.getElementById('profile-message');
-            const newPass = document.getElementById('internal-new-password').value;
-            
-            if (newPass.length < 6) {
-                msgEl.innerText = "MUST BE AT LEAST 6 CHARACTERS.";
-                msgEl.className = "mt-3 text-xs text-center font-bold text-red-500";
-                return;
-            }
-            
-            msgEl.innerText = "UPDATING...";
-            msgEl.className = "mt-3 text-xs text-center font-bold text-purple-400";
-            
-            const { error } = await supabaseClient.auth.updateUser({ password: newPass });
-            
-            if (error) {
-                msgEl.innerText = "ERROR: " + error.message;
-                msgEl.className = "mt-3 text-xs text-center font-bold text-red-500";
-            } else {
-                msgEl.innerText = "PASSWORD SUCCESSFULLY CHANGED!";
-                msgEl.className = "mt-3 text-xs text-center font-bold text-green-400";
-                document.getElementById('internal-new-password').value = '';
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                if (!email || !password) {
+                    messageEl.innerText = "Please enter email and password.";
+                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
+                    return;
+                }
+                
+                messageEl.innerText = "LOGGING IN...";
+                messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
+                
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                
+                if (error) {
+                    let errorMsg = error.message.toUpperCase();
+                    if (errorMsg.includes("INVALID")) {
+                        errorMsg = "INCORRECT EMAIL OR PASSWORD.\n\nHINT: MUST BE 6+ CHARACTERS.";
+                    }
+                    messageEl.innerText = errorMsg;
+                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
+                } else {
+                    messageEl.innerText = "";
+                    handleCheckUser();
+                }
+            } catch (err) {
+                messageEl.innerText = "ERROR: " + err.message;
+                messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
             }
         }
 
         async function handleSignUp() {
             const messageEl = document.getElementById('auth-message');
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            if (!email || !password) return messageEl.innerText = "Please enter email and password.", messageEl.className = "mt-5 text-sm text-red-500";
-            messageEl.innerText = "SIGNING UP...", messageEl.className = "mt-5 text-sm text-purple-400";
-            const { error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) messageEl.innerText = error.message.toUpperCase(), messageEl.className = "mt-5 text-sm text-red-500";
-            else messageEl.innerText = "SUCCESS! PLEASE LOG IN.", messageEl.className = "mt-5 text-sm text-green-400";
+            try {
+                if (!supabaseClient) throw new Error("Database connection blocked by browser.");
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                if (!email || !password) {
+                    messageEl.innerText = "Please enter email and password.";
+                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
+                    return;
+                }
+                
+                messageEl.innerText = "SIGNING UP...";
+                messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
+                
+                const { data, error } = await supabaseClient.auth.signUp({ email, password });
+                
+                if (error) {
+                    messageEl.innerText = error.message.toUpperCase();
+                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
+                } else {
+                    messageEl.innerText = "SUCCESS! PLEASE LOG IN.";
+                    messageEl.className = "mt-5 text-sm font-bold text-green-400 whitespace-pre-wrap";
+                }
+            } catch (err) {
+                messageEl.innerText = "ERROR: " + err.message;
+                messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
+            }
         }
 
-        async function handleLogin() {
+        async function handleResetPasswordRequest() {
             const messageEl = document.getElementById('auth-message');
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            if (!email || !password) return messageEl.innerText = "Please enter email and password.", messageEl.className = "mt-5 text-sm text-red-500";
-            messageEl.innerText = "LOGGING IN...", messageEl.className = "mt-5 text-sm text-purple-400";
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            try {
+                if (!supabaseClient) throw new Error("Database connection blocked by browser.");
+                
+                const email = document.getElementById('email').value;
+                
+                if (!email) {
+                    messageEl.innerText = "PLEASE ENTER EMAIL ABOVE.";
+                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
+                    return;
+                }
+                
+                messageEl.innerText = "SENDING LINK...";
+                messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
+                
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: 'https://snaplist-1xq3.onrender.com/?reset=true'
+                });
+                
+                if (error) {
+                    messageEl.innerText = "ERROR: " + error.message.toUpperCase();
+                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
+                } else {
+                    messageEl.innerText = "LINK SENT! CHECK EMAIL.";
+                    messageEl.className = "mt-5 text-sm font-bold text-green-400 whitespace-pre-wrap";
+                }
+            } catch (err) {
+                messageEl.innerText = "ERROR: " + err.message;
+                messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
+            }
+        }
+
+        async function handleUpdatePassword() {
+            const messageEl = document.getElementById('recovery-message');
+            try {
+                if (!supabaseClient) throw new Error("Database connection error.");
+                
+                const newPassword = document.getElementById('new-password').value;
+                
+                if (newPassword.length < 6) {
+                    messageEl.innerText = "MUST BE 6+ CHARACTERS.";
+                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
+                    return;
+                }
+                
+                messageEl.innerText = "UPDATING...";
+                messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
+                
+                const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+                
+                if (error) {
+                    messageEl.innerText = "ERROR: " + error.message.toUpperCase();
+                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
+                } else {
+                    messageEl.innerText = "SUCCESS! GOING TO DASHBOARD...";
+                    messageEl.className = "mt-5 text-sm font-bold text-green-400 whitespace-pre-wrap";
+                    setTimeout(() => window.location.href = 'https://snaplist-1xq3.onrender.com', 2000);
+                }
+            } catch (err) {
+                messageEl.innerText = "ERROR: " + err.message;
+                messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
+            }
+        }
+
+        async function handleSaveProfile() {
+            const btn = event.target;
+            try {
+                const bioText = document.getElementById('profile-bio').value;
+                const originalText = btn.innerText;
+                
+                btn.innerText = "SAVING...";
+                const { data, error } = await supabaseClient.auth.updateUser({
+                    data: { bio: bioText }
+                });
+                
+                if (!error) {
+                    btn.className = "bg-green-600 text-white px-4 py-2 rounded text-xs font-bold uppercase w-full transition-colors border border-green-500";
+                    btn.innerText = "SAVED!";
+                    setTimeout(() => {
+                        btn.className = "bg-purple-900 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-purple-700 w-full transition-colors border border-purple-700";
+                        btn.innerText = originalText;
+                    }, 2000);
+                }
+            } catch (err) {
+                btn.innerText = "ERROR SAVING";
+            }
+        }
+
+        async function handleInternalPasswordUpdate() {
+            const msgEl = document.getElementById('profile-message');
+            try {
+                const newPass = document.getElementById('internal-new-password').value;
+                
+                if (newPass.length < 6) {
+                    msgEl.innerText = "MUST BE AT LEAST 6 CHARACTERS.";
+                    msgEl.className = "mt-3 text-xs text-center font-bold text-red-500";
+                    return;
+                }
+                
+                msgEl.innerText = "UPDATING...";
+                msgEl.className = "mt-3 text-xs text-center font-bold text-purple-400";
+                
+                const { error } = await supabaseClient.auth.updateUser({ password: newPass });
+                
+                if (error) {
+                    msgEl.innerText = "ERROR: " + error.message;
+                    msgEl.className = "mt-3 text-xs text-center font-bold text-red-500";
+                } else {
+                    msgEl.innerText = "PASSWORD SUCCESSFULLY CHANGED!";
+                    msgEl.className = "mt-3 text-xs text-center font-bold text-green-400";
+                    document.getElementById('internal-new-password').value = '';
+                }
+            } catch (err) {
+                msgEl.innerText = "ERROR: " + err.message;
+                msgEl.className = "mt-3 text-xs text-center font-bold text-red-500";
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await supabaseClient.auth.signOut();
+                handleCheckUser();
+            } catch (err) {
+                console.error("Logout failed", err);
+            }
+        }
+
+        async function handleCheckout(event) {
+            if (!currentUser) return;
+            
+            const btn = event.target;
+            const originalText = btn.innerText;
+            const originalClass = btn.className;
+            
+            btn.innerText = "LOADING...";
+            btn.className = "bg-yellow-500 text-black px-6 py-3 rounded-md font-black uppercase tracking-wider whitespace-nowrap";
+            
+            try {
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUser.id })
+                });
+                const data = await response.json();
+                
+                if (data.url) {
+                    window.location.href = data.url; 
+                } else {
+                    const errorMessage = data.detail || "UNKNOWN ERROR";
+                    btn.innerText = "ERROR: " + errorMessage.toUpperCase();
+                    btn.className = "bg-red-600 text-white px-6 py-3 rounded-md font-bold uppercase tracking-wide whitespace-nowrap shadow-[0_0_15px_rgba(255,0,0,0.5)] text-xs";
+                    
+                    setTimeout(() => { btn.innerText = originalText; btn.className = originalClass; }, 5000);
+                }
+            } catch (err) { 
+                btn.innerText = "SERVER CRASH";
+                btn.className = "bg-red-600 text-white px-6 py-3 rounded-md font-black uppercase tracking-wider whitespace-nowrap shadow-[0_0_15px_rgba(255,0,0,0.5)]";
+                setTimeout(() => { btn.innerText = originalText; btn.className = originalClass; }, 3000);
+            }
+        }
+
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const out = document.getElementById('image-preview');
+                out.src = reader.result;
+                out.classList.remove('hidden');
+            };
+            if (event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function copySpecific(id, btn) {
+            navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => {
+                const orig = btn.innerHTML, cls = btn.className;
+                btn.innerHTML = '✅ COPIED!';
+                btn.className = 'bg-green-500 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors';
+                setTimeout(() => { btn.innerHTML = orig; btn.className = cls; }, 2000);
+            });
+        }
+
+        async function handleGenerateListing() {
+            if (!currentUser) return;
+            const file = document.getElementById('image-upload').files[0];
+            const cat = document.getElementById('category-select').value;
+            const stat = document.getElementById('status-message');
+            const res = document.getElementById('smart-results');
+            
+            if (!file) {
+                alert("Select an image!");
+                return;
+            }
+            
+            const fd = new FormData(); 
+            fd.append('image', file); 
+            fd.append('category', cat); 
+            fd.append('user_id', currentUser.id);
+            
+            stat.classList.remove('hidden'); 
+            res.classList.add('hidden');
+            stat.innerText = "ANALYZING... ⏳"; 
+            stat.className = "mt-8 p-6 border border-purple-800 rounded-md bg-black text-purple-400 font-bold font-mono text-sm shadow-inner text-center";
+            
+            try {
+                const response = await fetch('/api/generate-listing', { method: 'POST', body: fd });
+                const data = await response.json();
+                
+                if (data.result) {
+                    try {
+                        let rawText = data.result;
+                        let jsonStart = rawText.indexOf('{');
+                        let jsonEnd = rawText.lastIndexOf('}');
+                        
+                        if (jsonStart === -1 || jsonEnd === -1) throw new Error("No structured data found.");
+                        
+                        let cleanJson = rawText.substring(jsonStart, jsonEnd + 1);
+                        const parsed = JSON.parse(cleanJson);
+                        
+                        ['title', 'pricing', 'condition', 'ebay', 'facebook', 'poshmark', 'tags'].forEach(k => 
+                            document.getElementById('out-'+k).innerText = parsed[k] || "N/A"
+                        );
+                        
+                        stat.classList.add('hidden'); 
+                        res.classList.remove('hidden'); 
+                        res.classList.add('flex');
+                    } catch (e) { 
+                        stat.innerText = "🚨 Formatting error. Please hit 'Generate' again!"; 
+                        stat.className = "mt-8 p-6 bg-[#1a0505] text-red-400 font-bold font-mono text-sm border border-red-800 rounded-md text-center shadow-[0_0_15px_rgba(255,0,0,0.2)]"; 
+                    }
+                } else { 
+                    stat.innerText = "🚨 " + data.error;
+                    stat.className = "mt-8 p-6 bg-[#1a0505] text-red-400 font-bold font-mono text-sm border border-red-800 rounded-md text-center shadow-[0_0_15px_rgba(255,0,0,0.2)]"; 
+                }
+            } catch (e) { 
+                stat.innerText = "CONNECTION ERROR."; 
+                stat.className = "mt-8 p-6 bg-[#1a0505] text-red-400 font-bold font-mono text-sm border border-red-800 rounded-md text-center shadow-[0_0_15px_rgba(255,0,0,0.2)]";
+            }
+        }
+
+        handleCheckUser();
+    </script>
+</body>
+</html>
