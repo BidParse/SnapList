@@ -18,25 +18,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load Environment Variables
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
-STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
-STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# Dynamic Service Loaders (Bypasses Render boot-time caching)
+def get_supabase():
+    url = os.getenv("SUPABASE_URL")
+    key = os.getenv("SUPABASE_SERVICE_KEY")
+    if url and key:
+        return create_client(url, key)
+    return None
 
-# Initialize Services
-supabase: Client = None
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-if STRIPE_SECRET_KEY:
-    # Ensure there are no accidental spaces or newline characters in the key
-    stripe.api_key = STRIPE_SECRET_KEY.strip()
-
-gemini_client = None
-if GEMINI_API_KEY:
-    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+def get_gemini():
+    key = os.getenv("GEMINI_API_KEY")
+    if key:
+        return genai.Client(api_key=key.strip())
+    return None
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
@@ -58,8 +52,11 @@ async def generate_listing(
     category: str = Form("General"),
     user_id: str = Form(None)
 ):
+    gemini_client = get_gemini()
+    supabase = get_supabase()
+    
     if not gemini_client:
-        raise HTTPException(status_code=500, detail="Gemini API Key missing")
+        return JSONResponse(content={"error": "Server missing Gemini API Key."}, status_code=500)
         
     if not user_id or not supabase:
         return JSONResponse(content={"error": "Please log in to generate listings."}, status_code=401)
@@ -78,7 +75,6 @@ async def generate_listing(
                 content={"error": "FREE TRIAL ENDED! You have used your 3 free listings. Click 'UPGRADE - $9.99' above for unlimited generations!"}
             )
     except Exception as e:
-        print("Database error:", e)
         return JSONResponse(content={"error": "Database connection error."}, status_code=500)
     
     try:
@@ -131,6 +127,13 @@ async def generate_listing(
 @app.post("/api/checkout")
 async def create_checkout_session(request: Request):
     try:
+        # PULLS THE STRIPE KEY LIVE FROM RENDER AT THE EXACT MOMENT OF CHECKOUT
+        stripe_key = os.getenv("STRIPE_SECRET_KEY")
+        if not stripe_key:
+            raise Exception("STRIPE_SECRET_KEY IS EMPTY IN RENDER")
+            
+        stripe.api_key = stripe_key.strip()
+        
         data = await request.json()
         user_id = data.get("user_id", "guest")
 
@@ -146,24 +149,28 @@ async def create_checkout_session(request: Request):
             }],
             mode='payment',
             allow_promotion_codes=True,
-            # HARDCODED URLS TO BYPASS RENDER PROXY BUGS
+            # Hardcoded URLs so Render proxy cannot block the HTTPS redirect
             success_url="[https://snaplist-1xq3.onrender.com/?success=true](https://snaplist-1xq3.onrender.com/?success=true)",
             cancel_url="[https://snaplist-1xq3.onrender.com/?canceled=true](https://snaplist-1xq3.onrender.com/?canceled=true)",
             client_reference_id=user_id
         )
         return {"url": session.url}
     except Exception as e:
-        print("Stripe Error:", str(e))
+        print("Checkout Route Error:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/webhook/stripe")
 async def stripe_webhook(request: Request):
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
+    webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+    if not webhook_secret:
+        raise HTTPException(status_code=500, detail="Webhook secret missing.")
 
     try:
         event = stripe.Webhook.construct_event(
-            payload, sig_header, STRIPE_WEBHOOK_SECRET
+            payload, sig_header, webhook_secret.strip()
         )
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid payload")
@@ -174,6 +181,7 @@ async def stripe_webhook(request: Request):
         session = event["data"]["object"]
         user_id = session.get("client_reference_id")
 
+        supabase = get_supabase()
         if user_id and user_id != "guest" and supabase:
             try:
                 supabase.table("profiles").update({"is_pro": True}).eq("id", user_id).execute()
