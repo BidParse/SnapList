@@ -178,7 +178,6 @@
         async function handleCheckUser() {
             if (!supabaseClient) return;
 
-            // THE BULLETPROOF RESET CHECK (Bypasses iOS Mail Quirks)
             const urlStr = window.location.href;
             if (urlStr.includes('reset=true') || urlStr.includes('type=recovery') || urlStr.includes('access_token')) {
                 document.getElementById('auth-section').classList.add('hidden');
@@ -296,7 +295,7 @@
             const email = document.getElementById('email').value;
             if (!email) return messageEl.innerText = "PLEASE ENTER EMAIL ABOVE.", messageEl.className = "mt-5 text-sm text-red-500";
             messageEl.innerText = "SENDING LINK...", messageEl.className = "mt-5 text-sm text-purple-400";
-            // The ?reset=true ensures it forces the screen open
+            
             const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
                 redirectTo: 'https://snaplist-1xq3.onrender.com/?reset=true'
             });
@@ -365,21 +364,43 @@
             
             const fd = new FormData(); fd.append('image', file); fd.append('category', cat); fd.append('user_id', currentUser.id);
             stat.classList.remove('hidden'); res.classList.add('hidden');
-            stat.innerText = "ANALYZING... ⏳"; stat.className = "mt-8 p-6 bg-black text-purple-400 text-center";
+            stat.innerText = "ANALYZING... ⏳"; 
+            stat.className = "mt-8 p-6 border border-purple-800 rounded-md bg-black text-purple-400 font-bold font-mono text-sm shadow-inner text-center";
             
             try {
                 const response = await fetch('/api/generate-listing', { method: 'POST', body: fd });
                 const data = await response.json();
                 if (data.result) {
                     try {
-                        const parsed = JSON.parse(data.result.replace(/```json/gi, '').replace(/```/gi, '').trim());
+                        // The Bulletproof Data Extractor
+                        let rawText = data.result;
+                        let jsonStart = rawText.indexOf('{');
+                        let jsonEnd = rawText.lastIndexOf('}');
+                        
+                        if (jsonStart === -1 || jsonEnd === -1) throw new Error("No structured data found.");
+                        
+                        let cleanJson = rawText.substring(jsonStart, jsonEnd + 1);
+                        const parsed = JSON.parse(cleanJson);
+                        
                         ['title', 'pricing', 'condition', 'ebay', 'facebook', 'poshmark', 'tags'].forEach(k => 
                             document.getElementById('out-'+k).innerText = parsed[k] || "N/A"
                         );
-                        stat.classList.add('hidden'); res.classList.remove('hidden'); res.classList.add('flex');
-                    } catch (e) { stat.innerText = "🚨 Formatting error.", stat.className = "mt-8 p-6 text-red-400 text-center"; }
-                } else { stat.innerText = "🚨 " + data.error, stat.className = "mt-8 p-6 text-red-400 text-center"; }
-            } catch (e) { stat.innerText = "CONNECTION ERROR."; }
+                        
+                        stat.classList.add('hidden'); 
+                        res.classList.remove('hidden'); 
+                        res.classList.add('flex');
+                    } catch (e) { 
+                        stat.innerText = "🚨 Formatting error. The AI included extra conversational text. Please hit 'Generate' again to fix it!"; 
+                        stat.className = "mt-8 p-6 bg-[#1a0505] text-red-400 font-bold font-mono text-sm border border-red-800 rounded-md text-center shadow-[0_0_15px_rgba(255,0,0,0.2)]"; 
+                    }
+                } else { 
+                    stat.innerText = "🚨 " + data.error;
+                    stat.className = "mt-8 p-6 bg-[#1a0505] text-red-400 font-bold font-mono text-sm border border-red-800 rounded-md text-center shadow-[0_0_15px_rgba(255,0,0,0.2)]"; 
+                }
+            } catch (e) { 
+                stat.innerText = "CONNECTION ERROR."; 
+                stat.className = "mt-8 p-6 bg-[#1a0505] text-red-400 font-bold font-mono text-sm border border-red-800 rounded-md text-center shadow-[0_0_15px_rgba(255,0,0,0.2)]";
+            }
         }
 
         handleCheckUser();
