@@ -10,7 +10,6 @@ from supabase import create_client, Client
 # Initialize app
 app = FastAPI()
 
-# Enable CORS so your frontend can talk to your backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,7 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load Environment Variables from Render
+# Load Environment Variables
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
@@ -34,7 +33,6 @@ if SUPABASE_URL and SUPABASE_KEY:
 if STRIPE_SECRET_KEY:
     stripe.api_key = STRIPE_SECRET_KEY
 
-# Initialize the new Gemini Client
 gemini_client = None
 if GEMINI_API_KEY:
     gemini_client = genai.Client(api_key=GEMINI_API_KEY)
@@ -45,7 +43,7 @@ async def serve_frontend():
         with open("index.html", "r") as f:
             return f.read()
     except FileNotFoundError:
-        return "<html><body><h1>index.html not found. Make sure it is in your GitHub repo.</h1></body></html>"
+        return "<html><body><h1>index.html not found.</h1></body></html>"
 
 @app.get("/logo.png")
 async def serve_logo():
@@ -60,9 +58,38 @@ async def generate_listing(image: UploadFile = File(...)):
     
     try:
         image_data = await image.read()
-        prompt = "Analyze this product image. Provide a JSON response with 'title', 'price' (estimated fair market value), and a detailed 'description' for an online marketplace listing."
         
-        # Updated model to gemini-3.8-flash
+        # The Elite Cross-Listing Super Prompt
+        prompt = """You are an elite e-commerce copywriter, appraiser, and cross-listing expert. Analyze this product image and generate a master listing package designed to maximize sales across multiple platforms.
+
+        Format the output clearly with the following sections and spacing so the user can easily copy and paste what they need:
+
+        🏆 MASTER TITLE
+        (Provide a highly-searchable, 80-character max SEO title including brand, model, color, and size if applicable)
+
+        💰 APPRAISAL & PRICING STRATEGY
+        • Quick Sale Price (Priced to move in 24-48 hours): $...
+        • Fair Market Value (Average current comp): $...
+        • Max Profit/Retail (If in pristine/new condition): $...
+
+        📦 PLATFORM-SPECIFIC DESCRIPTIONS
+        
+        1️⃣ eBay / Mercari (The Professional Listing)
+        Write a detailed, bulleted description focusing on exact item specifics, condition grading, authenticity markers, and professional shipping/return policies.
+        
+        2️⃣ Facebook Marketplace / OfferUp (The Local Listing)
+        Write a conversational, urgent, and friendly description. Include placeholders for [City/Zip Code] local pickup, cash/digital payment preferences, and a "first come, first served" call to action.
+        
+        3️⃣ Poshmark / Depop (The Boutique Listing)
+        Write a trendy, stylish description utilizing relevant emojis. Focus on the aesthetic, how to style it, and include 5-10 highly relevant aesthetic hashtags at the bottom.
+
+        ✨ CONDITION & FLAW CHECK
+        (List the apparent condition based on the photo. Note any visible flaws, scuffs, or missing parts the seller should double-check before posting.)
+
+        🔍 MASTER SEO TAGS
+        (Provide a comma-separated list of 15 high-volume search keywords for backend tags)
+        """
+        
         response = gemini_client.models.generate_content(
             model='gemini-3.8-flash',
             contents=[
@@ -88,7 +115,7 @@ async def create_checkout_session(request: Request):
                 'price_data': {
                     'currency': 'usd',
                     'product_data': {'name': 'SimpleList Pro'},
-                    'unit_amount': 999, # $9.99
+                    'unit_amount': 999,
                 },
                 'quantity': 1,
             }],
