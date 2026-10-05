@@ -136,12 +136,11 @@ async def create_checkout_session(request: Request):
         data = await request.json()
         user_id = data.get("user_id", "guest")
 
-        # Dynamically grabs the flawless, perfectly formatted URL directly from the browser
         origin = request.headers.get("origin") or "[https://snaplist-1xq3.onrender.com](https://snaplist-1xq3.onrender.com)"
         clean_url = origin.rstrip("/") + "/"
 
+        # Removed the deprecated payment_method_types line
         session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
             line_items=[{
                 'price_data': {
                     'currency': 'usd',
@@ -151,7 +150,7 @@ async def create_checkout_session(request: Request):
                 'quantity': 1,
             }],
             mode='payment',
-            allow_promotion_codes=True,
+            allow_promotion_codes=False,
             success_url=clean_url,
             cancel_url=clean_url,
             client_reference_id=user_id
@@ -159,7 +158,6 @@ async def create_checkout_session(request: Request):
         return {"url": session.url}
     except Exception as e:
         error_msg = str(e)
-        # Strip out the massive Request ID so it fits cleanly on the button
         if "Request req_" in error_msg:
             error_msg = error_msg.split(": ", 1)[-1]
         print("Checkout Route Error:", error_msg)
