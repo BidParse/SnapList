@@ -1,199 +1,128 @@
-import os
-import stripe
-from fastapi import FastAPI, Request, HTTPException, UploadFile, File, Form
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
-from fastapi.middleware.cors import CORSMiddleware
-from google import genai
-from google.genai import types
-from supabase import create_client, Client
-
-# Initialize app
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Load Environment Variables
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
-STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
-STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-# Initialize Services
-supabase: Client = None
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-if STRIPE_SECRET_KEY:
-    stripe.api_key = STRIPE_SECRET_KEY
-
-gemini_client = None
-if GEMINI_API_KEY:
-    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-
-@app.get("/", response_class=HTMLResponse)
-async def serve_frontend():
-    try:
-        with open("index.html", "r") as f:
-            return f.read()
-    except FileNotFoundError:
-        return "<html><body><h1>index.html not found.</h1></body></html>"
-
-@app.get("/logo.png")
-async def serve_logo():
-    if os.path.exists("logo.png"):
-        return FileResponse("logo.png")
-    return HTMLResponse(status_code=404, content="Logo not found")
-
-@app.post("/api/generate-listing")
-async def generate_listing(
-    image: UploadFile = File(...), 
-    category: str = Form("General"),
-    user_id: str = Form(None)
-):
-    if not gemini_client:
-        raise HTTPException(status_code=500, detail="Gemini API Key missing")
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimpleList</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-black text-white p-8 font-sans min-h-screen flex flex-col items-center">
+    <div class="w-full max-w-2xl bg-[#111111] border border-purple-900 p-10 rounded-xl shadow-[0_0_20px_rgba(128,0,128,0.3)]">
         
-    if not user_id or not supabase:
-        return JSONResponse(content={"error": "Please log in to generate listings."}, status_code=401)
+        <div class="text-center mb-10">
+            <h1 class="text-6xl font-black tracking-wide mb-6"><span class="text-purple-600">Simple</span><span class="text-white">List</span></h1>
+            <img src="logo.png" alt="SimpleList Logo" class="h-40 mx-auto object-contain drop-shadow-[0_0_15px_rgba(147,51,234,0.3)]">
+            <p class="text-sm text-[#C0C0C0] mt-6 tracking-widest uppercase">AI Marketplace Generator</p>
+        </div>
+
+        <div id="auth-section" class="mb-8 pb-8 border-b border-purple-900/50">
+            <h2 class="text-xl mb-4 font-bold text-purple-400 uppercase tracking-wide">Account Access</h2>
+            <input type="email" id="email" placeholder="Email Address" class="bg-black border border-purple-800 text-white p-4 w-full mb-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
+            <input type="password" id="password" placeholder="Password" class="bg-black border border-purple-800 text-white p-4 w-full mb-6 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
+            <div class="flex gap-4">
+                <button onclick="login()" class="bg-purple-600 text-white font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-500 transition-colors duration-200">Login</button>
+                <button onclick="signUp()" class="bg-black border border-purple-600 text-purple-500 font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-900/30 transition-colors duration-200">Sign Up</button>
+            </div>
+            <p id="auth-message" class="mt-5 text-sm text-center font-bold"></p>
+        </div>
+
+        <div id="app-section" class="hidden">
+            <div class="flex justify-between items-center mb-8 bg-black p-4 rounded-md border border-purple-900/50">
+                <p class="text-sm text-[#C0C0C0]">USER: <span id="user-email" class="font-bold text-purple-400 tracking-wide"></span></p>
+                <button onclick="logout()" class="text-[#C0C0C0] text-sm font-bold uppercase hover:text-white transition-colors">Logout</button>
+            </div>
+
+            <div class="mb-10 p-6 bg-gradient-to-r from-purple-900/40 to-black border border-purple-700 rounded-md flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <h3 class="font-black text-xl text-white uppercase tracking-wider">SimpleList <span class="text-purple-400">Pro</span></h3>
+                    <p class="text-sm text-[#C0C0C0] mt-1">Unlock unlimited AI generations.</p>
+                </div>
+                <button onclick="checkout()" class="bg-white text-black px-6 py-3 rounded-md font-black uppercase tracking-wider hover:bg-[#C0C0C0] transition-colors whitespace-nowrap shadow-[0_0_15px_rgba(255,255,255,0.2)]">Upgrade - $9.99</button>
+            </div>
+
+            <div>
+                <h2 class="text-xl mb-4 font-bold text-purple-400 uppercase tracking-wide">New Listing</h2>
+                
+                <select id="category-select" class="w-full bg-black border border-purple-700 text-[#C0C0C0] p-4 mb-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-400 font-bold uppercase tracking-wide cursor-pointer hover:border-purple-500 transition-colors">
+                    <option value="General">Auto-Detect (General Listing)</option>
+                    <option value="Sneakers & Shoes">Sneakers & Shoes</option>
+                    <option value="Trading Cards & Collectibles">Trading Cards & Collectibles</option>
+                    <option value="Electronics & Computers">Electronics & Computers</option>
+                    <option value="Vehicles & Auto Parts">Vehicles & Auto Parts</option>
+                    <option value="Clothing & Apparel">Clothing & Apparel</option>
+                </select>
+
+                <div class="border-2 border-dashed border-purple-700 hover:border-purple-400 transition-colors bg-black p-8 text-center rounded-md mb-6 flex flex-col items-center justify-center min-h-[200px]">
+                    <img id="image-preview" class="hidden max-h-64 object-contain mb-6 rounded-md shadow-[0_0_15px_rgba(147,51,234,0.2)]">
+                    <input type="file" id="image-upload" accept="image/*" onchange="previewImage(event)" class="w-full cursor-pointer text-[#C0C0C0] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-purple-900 file:text-white hover:file:bg-purple-700 transition-colors">
+                </div>
+                
+                <button onclick="generateListing()" class="bg-purple-600 text-white px-4 py-4 rounded-md w-full font-black text-lg uppercase tracking-wider hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(128,0,128,0.4)]">Generate AI Listing</button>
+            </div>
+
+            <div id="result" class="mt-8 p-6 border border-purple-800 rounded-md bg-black hidden whitespace-pre-wrap text-white font-mono text-sm shadow-inner leading-relaxed">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://wzmaaahyovsroeyjsmst.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_7HpG3z67MVak6k9csFWmKQ_7MLqrMyP'; 
         
-    # --- THE PAYWALL LOGIC ---
-    try:
-        profile_response = supabase.table("profiles").select("is_pro, generation_count").eq("id", user_id).execute()
-        if not profile_response.data:
-            return JSONResponse(content={"error": "User profile not found. Please log out and back in."}, status_code=404)
-        
-        profile = profile_response.data[0]
-        is_pro = profile.get("is_pro", False)
-        generation_count = profile.get("generation_count", 0)
-        
-        # Block if they hit the limit and aren't Pro
-        if not is_pro and generation_count >= 3:
-            return JSONResponse(
-                content={"error": "FREE TRIAL ENDED! You have used your 3 free listings. Click 'UPGRADE - $9.99' above for unlimited generations!"}
-            )
-    except Exception as e:
-        print("Database error:", e)
-        return JSONResponse(content={"error": "Database connection error."}, status_code=500)
-    
-    try:
-        image_data = await image.read()
-        
-        # Niche Intelligence Routing
-        category_instructions = {
-            "Sneakers & Shoes": "Focus heavily on colorway, size tags, visible wear on outsoles/midsoles, authenticity indicators, and box condition. Mention if it looks like a retro or highly sought-after release.",
-            "Trading Cards & Collectibles": "Act as a card grader. Focus tightly on centering, corner sharpness, edge wear, surface condition, and potential grading value (PSA/Beckett). Note parallels or holos.",
-            "Electronics & Computers": "Focus on identifying make, model, specs (RAM, storage, processor if identifiable), ports, and visible physical condition. Note if testing is required.",
-            "Vehicles & Auto Parts": "Identify the vehicle part or model. Focus on compatibility, visible wear, OEM markers, and functional condition for mechanics or gearheads.",
-            "Clothing & Apparel": "Focus on brand, aesthetic style, visible size, material quality, and measurements. Note any fading, pilling, or stains.",
-            "General": "Provide a comprehensive breakdown of the item's visual condition and standard features."
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let currentUser = null;
+
+        async function checkUser() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('app-section').classList.remove('hidden');
+                document.getElementById('user-email').innerText = currentUser.email;
+            } else {
+                currentUser = null;
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('app-section').classList.add('hidden');
+            }
         }
-        
-        niche_focus = category_instructions.get(category, category_instructions["General"])
-        
-        # The Elite Cross-Listing Super Prompt
-        prompt = f"""You are an elite e-commerce copywriter, appraiser, and cross-listing expert. 
-        The user has categorized this item as: {category}. 
-        CRITICAL NICHE INSTRUCTION: {niche_focus}
 
-        Analyze this product image and generate a master listing package designed to maximize sales across multiple platforms. Format the output clearly with the following sections and spacing:
+        async function signUp() {
+            const email = document.getElementById('email').value;
+            const password = documentI am so sorry for the loop! I kept re-sending the website files and completely forgot to give you the database fix you actually asked for.
 
-        🏆 MASTER TITLE
-        (Provide a highly-searchable, 80-character max SEO title including brand, model, color, and size if applicable)
+Here is the exact **SQL code** for your **Supabase SQL Editor** to fix that `null value in column "email"` error. 
 
-        💰 APPRAISAL & PRICING STRATEGY
-        • Quick Sale Price (Priced to move in 24-48 hours): $...
-        • Fair Market Value (Average current comp): $...
-        • Max Profit/Retail (If in pristine/new condition): $...
+Highlight everything in the Supabase SQL Editor, delete it, and paste this:
 
-        📦 PLATFORM-SPECIFIC DESCRIPTIONS
-        
-        1️⃣ eBay / Mercari (The Professional Listing)
-        Write a detailed, bulleted description focusing on exact item specifics, condition grading, authenticity markers, and professional shipping/return policies.
-        
-        2️⃣ Facebook Marketplace / OfferUp (The Local Listing)
-        Write a conversational, urgent, and friendly description. Include placeholders for [City/Zip Code] local pickup, cash/digital payment preferences, and a "first come, first served" call to action.
-        
-        3️⃣ Poshmark / Depop (The Boutique Listing)
-        Write a trendy, stylish description utilizing relevant emojis. Focus on the aesthetic, how to style it, and include 5-10 highly relevant aesthetic hashtags at the bottom.
+```sql
+-- Add our tracking columns to your existing table
+alter table public.profiles
+add column if not exists is_pro boolean default false,
+add column if not exists generation_count integer default 0;
 
-        ✨ CONDITION & FLAW CHECK
-        (List the apparent condition based on the photo. Note any visible flaws, scuffs, or missing parts the seller should double-check before posting.)
+-- Set up the trigger function to handle new signups safely (Now including the email!)
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email)
+  values (new.id, new.email)
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
 
-        🔍 MASTER SEO TAGS
-        (Provide a comma-separated list of 15 high-volume search keywords for backend tags)
-        """
-        
-        response = gemini_client.models.generate_content(
-            model='gemini-3.8-flash',
-            contents=[
-                prompt,
-                types.Part.from_bytes(data=image_data, mime_type=image.content_type)
-            ]
-        )
-        
-        # --- TICK THE COUNTER UP ---
-        if not is_pro:
-            supabase.table("profiles").update({"generation_count": generation_count + 1}).eq("id", user_id).execute()
-        
-        return JSONResponse(content={"result": response.text})
-        
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+-- Refresh the trigger
+drop trigger if exists on_auth_user_created on auth.users;
 
-@app.post("/api/checkout")
-async def create_checkout_session(request: Request):
-    try:
-        data = await request.json()
-        user_id = data.get("user_id", "guest")
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
 
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {'name': 'SimpleList Pro'},
-                    'unit_amount': 999,
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            success_url=str(request.base_url) + "?success=true",
-            cancel_url=str(request.base_url) + "?canceled=true",
-            client_reference_id=user_id
-        )
-        return {"url": session.url}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/webhook/stripe")
-async def stripe_webhook(request: Request):
-    payload = await request.body()
-    sig_header = request.headers.get("stripe-signature")
-
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, STRIPE_WEBHOOK_SECRET
-        )
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid payload")
-    except stripe.error.SignatureVerificationError:
-        raise HTTPException(status_code=400, detail="Invalid signature")
-
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        user_id = session.get("client_reference_id")
-
-        if user_id and user_id != "guest" and supabase:
-            try:
-                supabase.table("profiles").update({"is_pro": True}).eq("id", user_id).execute()
-            except Exception as db_error:
-                print("Supabase update error:", db_error)
-
-    return {"status": "success"}
+-- Retroactively create trackers for any accounts you already made while testing (Now including the email!)
+insert into public.profiles (id, email)
+select id, email from auth.users
+on conflict (id) do nothing;
