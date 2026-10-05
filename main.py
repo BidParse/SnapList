@@ -127,7 +127,6 @@ async def generate_listing(
 @app.post("/api/checkout")
 async def create_checkout_session(request: Request):
     try:
-        # PULLS THE STRIPE KEY LIVE FROM RENDER AT THE EXACT MOMENT OF CHECKOUT
         stripe_key = os.getenv("STRIPE_SECRET_KEY")
         if not stripe_key:
             raise Exception("STRIPE_SECRET_KEY IS EMPTY IN RENDER")
@@ -136,6 +135,10 @@ async def create_checkout_session(request: Request):
         
         data = await request.json()
         user_id = data.get("user_id", "guest")
+
+        # Dynamically grabs the flawless, perfectly formatted URL directly from the browser
+        origin = request.headers.get("origin") or "[https://snaplist-1xq3.onrender.com](https://snaplist-1xq3.onrender.com)"
+        clean_url = origin.rstrip("/") + "/"
 
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
@@ -149,15 +152,18 @@ async def create_checkout_session(request: Request):
             }],
             mode='payment',
             allow_promotion_codes=True,
-            # Hardcoded URLs so Render proxy cannot block the HTTPS redirect
-            success_url="[https://snaplist-1xq3.onrender.com/?success=true](https://snaplist-1xq3.onrender.com/?success=true)",
-            cancel_url="[https://snaplist-1xq3.onrender.com/?canceled=true](https://snaplist-1xq3.onrender.com/?canceled=true)",
+            success_url=clean_url,
+            cancel_url=clean_url,
             client_reference_id=user_id
         )
         return {"url": session.url}
     except Exception as e:
-        print("Checkout Route Error:", str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        error_msg = str(e)
+        # Strip out the massive Request ID so it fits cleanly on the button
+        if "Request req_" in error_msg:
+            error_msg = error_msg.split(": ", 1)[-1]
+        print("Checkout Route Error:", error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
 
 @app.post("/api/webhook/stripe")
 async def stripe_webhook(request: Request):
