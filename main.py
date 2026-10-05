@@ -139,13 +139,18 @@ async def create_checkout_session(request: Request):
         origin = request.headers.get("origin") or "[https://snaplist-1xq3.onrender.com](https://snaplist-1xq3.onrender.com)"
         clean_url = origin.rstrip("/") + "/"
 
-        # Removed the deprecated payment_method_types line
         session = stripe.checkout.Session.create(
             line_items=[{
                 'price_data': {
                     'currency': 'usd',
-                    'product_data': {'name': 'SimpleList Pro'},
+                    'product_data': {
+                        'name': 'SimpleList Pro',
+                        # Added Digital Goods tax code to satisfy Stripe's tax engine
+                        'tax_code': 'txcd_10000000' 
+                    },
                     'unit_amount': 999,
+                    # Explicitly declare tax behavior
+                    'tax_behavior': 'exclusive',
                 },
                 'quantity': 1,
             }],
