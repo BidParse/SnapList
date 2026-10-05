@@ -17,6 +17,7 @@
             <p class="text-sm text-[#C0C0C0] mt-6 tracking-widest uppercase">AI Marketplace Generator</p>
         </div>
 
+        <!-- AUTHENTICATION SECTION (Login / Sign Up) -->
         <div id="auth-section" class="mb-8 pb-8 border-b border-purple-900/50">
             <h2 class="text-xl mb-4 font-bold text-purple-400 uppercase tracking-wide">Account Access</h2>
             <input type="email" id="email" placeholder="Email Address" class="bg-black border border-purple-800 text-white p-4 w-full mb-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
@@ -30,14 +31,26 @@
                 <button onclick="handleSignUp()" class="bg-black border border-purple-600 text-purple-500 font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-900/30 transition-colors duration-200">Sign Up</button>
             </div>
             
-            <!-- NEW: Forgot Password Button -->
             <div class="mt-6 text-center">
-                <button onclick="handleResetPassword()" class="text-xs text-purple-400 hover:text-purple-300 transition-colors uppercase tracking-widest font-bold">Forgot Password?</button>
+                <button onclick="handleResetPasswordRequest()" class="text-xs text-purple-400 hover:text-purple-300 transition-colors uppercase tracking-widest font-bold">Forgot Password?</button>
             </div>
 
             <p id="auth-message" class="mt-5 text-sm text-center font-bold whitespace-pre-wrap"></p>
         </div>
 
+        <!-- NEW: PASSWORD RECOVERY SECTION (Only shows when clicking email link) -->
+        <div id="recovery-section" class="hidden mb-8 pb-8 border-b border-purple-900/50 text-center">
+            <h2 class="text-xl mb-4 font-bold text-green-400 uppercase tracking-wide">Reset Your Password</h2>
+            <p class="text-sm text-[#C0C0C0] mb-6">Enter your new secure password below.</p>
+            
+            <input type="password" id="new-password" placeholder="New Password" class="bg-black border border-purple-800 text-white p-4 w-full mb-2 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500">
+            <p class="text-xs text-gray-500 mb-6 text-left pl-1">Requirement: Password must be at least 6 characters long.</p>
+            
+            <button onclick="handleUpdatePassword()" class="bg-green-600 text-white font-black uppercase tracking-wider px-4 py-4 rounded-md w-full hover:bg-green-500 transition-colors duration-200">Save New Password</button>
+            <p id="recovery-message" class="mt-5 text-sm text-center font-bold whitespace-pre-wrap"></p>
+        </div>
+
+        <!-- MAIN DASHBOARD APP SECTION -->
         <div id="app-section" class="hidden">
             <div class="flex justify-between items-center mb-8 bg-black p-4 rounded-md border border-purple-900/50">
                 <p class="text-sm text-[#C0C0C0]">USER: <span id="user-email" class="font-bold text-purple-400 tracking-wide"></span></p>
@@ -127,18 +140,33 @@
             console.error("Supabase failed to load", e);
         }
 
+        // NEW: This listens to see if the user just clicked a password reset link
+        if (supabaseClient) {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'PASSWORD_RECOVERY') {
+                    document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('app-section').classList.add('hidden');
+                    document.getElementById('recovery-section').classList.remove('hidden');
+                }
+            });
+        }
+
         async function handleCheckUser() {
             if (!supabaseClient) return;
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 currentUser = session.user;
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('app-section').classList.remove('hidden');
-                document.getElementById('user-email').innerText = currentUser.email;
+                // Only show app if we aren't currently in the middle of a password reset
+                if (document.getElementById('recovery-section').classList.contains('hidden')) {
+                    document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('app-section').classList.remove('hidden');
+                    document.getElementById('user-email').innerText = currentUser.email;
+                }
             } else {
                 currentUser = null;
                 document.getElementById('auth-section').classList.remove('hidden');
                 document.getElementById('app-section').classList.add('hidden');
+                document.getElementById('recovery-section').classList.add('hidden');
             }
         }
 
@@ -208,8 +236,7 @@
             }
         }
 
-        // NEW: Reset Password Function
-        async function handleResetPassword() {
+        async function handleResetPasswordRequest() {
             const messageEl = document.getElementById('auth-message');
             try {
                 if (!supabaseClient) throw new Error("Database connection error.");
@@ -224,7 +251,9 @@
                 messageEl.innerText = "SENDING RESET LINK... ⏳";
                 messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
                 
-                const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email);
+                const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: 'https://snaplist-1xq3.onrender.com'
+                });
                 
                 if (error) {
                     messageEl.innerText = "ERROR: " + error.message.toUpperCase();
@@ -232,6 +261,41 @@
                 } else {
                     messageEl.innerText = "RESET LINK SENT! CHECK YOUR EMAIL.";
                     messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
+                }
+            } catch (err) {
+                messageEl.innerText = "ERROR: " + err.message;
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide whitespace-pre-wrap";
+            }
+        }
+
+        async function handleUpdatePassword() {
+            const messageEl = document.getElementById('recovery-message');
+            try {
+                const newPassword = document.getElementById('new-password').value;
+                
+                if (!newPassword || newPassword.length < 6) {
+                    messageEl.innerText = "PASSWORD MUST BE AT LEAST 6 CHARACTERS LONG.";
+                    messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
+                    return;
+                }
+
+                messageEl.innerText = "UPDATING PASSWORD... ⏳";
+                messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
+                
+                const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+                
+                if (error) {
+                    messageEl.innerText = "ERROR: " + error.message.toUpperCase();
+                    messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide whitespace-pre-wrap";
+                } else {
+                    messageEl.innerText = "SUCCESS! GOING TO DASHBOARD...";
+                    messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
+                    
+                    // Hide recovery screen and show the app after 2 seconds
+                    setTimeout(() => {
+                        document.getElementById('recovery-section').classList.add('hidden');
+                        document.getElementById('app-section').classList.remove('hidden');
+                    }, 2000);
                 }
             } catch (err) {
                 messageEl.innerText = "ERROR: " + err.message;
