@@ -38,7 +38,7 @@
             <p id="auth-message" class="mt-5 text-sm text-center font-bold whitespace-pre-wrap"></p>
         </div>
 
-        <!-- NEW: PASSWORD RECOVERY SECTION (Only shows when clicking email link) -->
+        <!-- PASSWORD RECOVERY SECTION -->
         <div id="recovery-section" class="hidden mb-8 pb-8 border-b border-purple-900/50 text-center">
             <h2 class="text-xl mb-4 font-bold text-green-400 uppercase tracking-wide">Reset Your Password</h2>
             <p class="text-sm text-[#C0C0C0] mb-6">Enter your new secure password below.</p>
@@ -140,28 +140,25 @@
             console.error("Supabase failed to load", e);
         }
 
-        // NEW: This listens to see if the user just clicked a password reset link
-        if (supabaseClient) {
-            supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                if (event === 'PASSWORD_RECOVERY') {
-                    document.getElementById('auth-section').classList.add('hidden');
-                    document.getElementById('app-section').classList.add('hidden');
-                    document.getElementById('recovery-section').classList.remove('hidden');
-                }
-            });
-        }
-
         async function handleCheckUser() {
             if (!supabaseClient) return;
+
+            // BULLETPROOF RECOVERY CHECK: Look directly at the web address
+            const hash = window.location.hash;
+            if (hash && (hash.includes('type=recovery') || hash.includes('recovery'))) {
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('app-section').classList.add('hidden');
+                document.getElementById('recovery-section').classList.remove('hidden');
+                return; // Stop running this function so it doesn't try to log them in yet
+            }
+
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 currentUser = session.user;
-                // Only show app if we aren't currently in the middle of a password reset
-                if (document.getElementById('recovery-section').classList.contains('hidden')) {
-                    document.getElementById('auth-section').classList.add('hidden');
-                    document.getElementById('app-section').classList.remove('hidden');
-                    document.getElementById('user-email').innerText = currentUser.email;
-                }
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('recovery-section').classList.add('hidden');
+                document.getElementById('app-section').classList.remove('hidden');
+                document.getElementById('user-email').innerText = currentUser.email;
             } else {
                 currentUser = null;
                 document.getElementById('auth-section').classList.remove('hidden');
@@ -173,7 +170,7 @@
         async function handleSignUp() {
             const messageEl = document.getElementById('auth-message');
             try {
-                if (!supabaseClient) throw new Error("Database connection blocked by browser extension.");
+                if (!supabaseClient) throw new Error("Database connection error.");
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 
@@ -204,7 +201,7 @@
         async function handleLogin() {
             const messageEl = document.getElementById('auth-message');
             try {
-                if (!supabaseClient) throw new Error("Database connection blocked by browser extension.");
+                if (!supabaseClient) throw new Error("Database connection error.");
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 
@@ -291,8 +288,8 @@
                     messageEl.innerText = "SUCCESS! GOING TO DASHBOARD...";
                     messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
                     
-                    // Hide recovery screen and show the app after 2 seconds
                     setTimeout(() => {
+                        window.location.hash = ''; // Clear the secret code from the URL
                         document.getElementById('recovery-section').classList.add('hidden');
                         document.getElementById('app-section').classList.remove('hidden');
                     }, 2000);
