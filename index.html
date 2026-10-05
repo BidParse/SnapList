@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimpleList</title>
+    <!-- Tailwind CSS is loaded here to give it the dark mode styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -24,6 +25,7 @@
                 <button onclick="login()" class="bg-purple-600 text-white font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-500 transition-colors duration-200">Login</button>
                 <button onclick="signUp()" class="bg-black border border-purple-600 text-purple-500 font-black uppercase tracking-wider px-4 py-3 rounded-md flex-1 hover:bg-purple-900/30 transition-colors duration-200">Sign Up</button>
             </div>
+            <!-- Error and success messages will properly display here now -->
             <p id="auth-message" class="mt-5 text-sm text-center font-bold"></p>
         </div>
 
@@ -67,7 +69,7 @@
             <!-- SMART UI: Segmented Results -->
             <div id="smart-results" class="mt-8 hidden flex-col gap-6">
                 
-                <!-- Title & Pricing (Always visible for copying title) -->
+                <!-- Title & Pricing -->
                 <div class="p-6 border border-purple-600 bg-black rounded-md relative group">
                     <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Title & Pricing</h4>
                     <p id="out-title" class="font-bold text-lg mb-2 text-white"></p>
@@ -136,4 +138,158 @@
 
         async function signUp() {
             const email = document.getElementById('email').value;
-            const password
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('auth-message');
+            
+            if (!email || !password) {
+                messageEl.innerText = "Please enter an email and password.";
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500";
+                return;
+            }
+
+            messageEl.innerText = "SIGNING UP...";
+            messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
+            
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+            
+            if (error) {
+                messageEl.innerText = error.message.toUpperCase();
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
+            } else {
+                messageEl.innerText = "SUCCESS! PLEASE LOG IN.";
+                messageEl.className = "mt-5 text-sm text-center font-bold text-green-400 uppercase tracking-wider";
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('auth-message');
+            
+            if (!email || !password) {
+                messageEl.innerText = "Please enter an email and password.";
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500";
+                return;
+            }
+
+            messageEl.innerText = "LOGGING IN...";
+            messageEl.className = "mt-5 text-sm text-center font-bold text-purple-400 uppercase tracking-wider";
+            
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            
+            if (error) {
+                messageEl.innerText = error.message.toUpperCase();
+                messageEl.className = "mt-5 text-sm text-center font-bold text-red-500 tracking-wide";
+            } else {
+                messageEl.innerText = "";
+                checkUser();
+            }
+        }
+
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            checkUser();
+        }
+
+        async function checkout() {
+            if (!currentUser) return alert("Please log in first!");
+            try {
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUser.id })
+                });
+                const data = await response.json();
+                if (data.url) window.location.href = data.url; 
+                else alert("Error starting checkout");
+            } catch (err) {
+                alert("Payment system unavailable right now.");
+            }
+        }
+
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const output = document.getElementById('image-preview');
+                output.src = reader.result;
+                output.classList.remove('hidden');
+            };
+            if (event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function copySpecific(elementId, btnElement) {
+            const textToCopy = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = btnElement.innerHTML;
+                const originalClasses = btnElement.className;
+                
+                btnElement.innerHTML = '✅ COPIED!';
+                btnElement.className = 'bg-green-500 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors';
+                
+                setTimeout(() => {
+                    btnElement.innerHTML = originalText;
+                    btnElement.className = originalClasses;
+                }, 2000);
+            });
+        }
+
+        async function generateListing() {
+            if (!currentUser) return alert("Please log in to generate a listing!");
+
+            const fileInput = document.getElementById('image-upload');
+            const categorySelect = document.getElementById('category-select');
+            const statusMsg = document.getElementById('status-message');
+            const smartResults = document.getElementById('smart-results');
+            
+            if (!fileInput.files.length) return alert("Please select an image first!");
+            
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('category', categorySelect.value);
+            formData.append('user_id', currentUser.id);
+
+            statusMsg.classList.remove('hidden');
+            smartResults.classList.add('hidden');
+            statusMsg.innerText = "ANALYZING IMAGE & GENERATING NICHE LISTING... ⏳";
+            statusMsg.className = "mt-8 p-6 border border-purple-800 rounded-md bg-black text-purple-400 font-bold font-mono text-sm shadow-inner text-center";
+
+            try {
+                const response = await fetch('/api/generate-listing', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.result) {
+                    try {
+                        let cleanJson = data.result.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                        const parsed = JSON.parse(cleanJson);
+                        
+                        document.getElementById('out-title').innerText = parsed.title || "No title generated";
+                        document.getElementById('out-pricing').innerText = parsed.pricing || "Pricing unavailable";
+                        document.getElementById('out-condition').innerText = parsed.condition || "N/A";
+                        document.getElementById('out-ebay').innerText = parsed.ebay || "N/A";
+                        document.getElementById('out-facebook').innerText = parsed.facebook || "N/A";
+                        document.getElementById('out-poshmark').innerText = parsed.poshmark || "N/A";
+                        document.getElementById('out-tags').innerText = parsed.tags || "N/A";
+                        
+                        statusMsg.classList.add('hidden');
+                        smartResults.classList.remove('hidden');
+                        smartResults.classList.add('flex');
+                    } catch (parseError) {
+                        statusMsg.innerText = "🚨 Error formatting the response. Please try again.";
+                        statusMsg.className = "mt-8 p-6 border border-red-800 rounded-md bg-[#1a0505] text-red-400 font-bold font-mono text-sm shadow-[0_0_15px_rgba(255,0,0,0.2)] text-center";
+                    }
+                } else {
+                    statusMsg.innerText = "🚨 " + data.error;
+                    statusMsg.className = "mt-8 p-6 border border-red-800 rounded-md bg-[#1a0505] text-red-400 font-bold font-mono text-sm shadow-[0_0_15px_rgba(255,0,0,0.2)] text-center";
+                }
+            } catch (e) {
+                statusMsg.innerText = "A CONNECTION ERROR OCCURRED.";
+            }
+        }
+
+        checkUser();
+    </script>
+</body>
+</html>
