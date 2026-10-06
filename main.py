@@ -145,11 +145,9 @@ async def create_checkout_session(request: Request):
                     'currency': 'usd',
                     'product_data': {
                         'name': 'SimpleList Pro',
-                        # Added Digital Goods tax code to satisfy Stripe's tax engine
                         'tax_code': 'txcd_10000000' 
                     },
                     'unit_amount': 999,
-                    # Explicitly declare tax behavior
                     'tax_behavior': 'exclusive',
                 },
                 'quantity': 1,
@@ -186,9 +184,10 @@ async def stripe_webhook(request: Request):
     except stripe.error.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Invalid signature")
 
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        user_id = session.get("client_reference_id")
+    # FIX: Reading the Stripe Object directly instead of treating it like a dictionary
+    if event.type == "checkout.session.completed":
+        session = event.data.object
+        user_id = getattr(session, 'client_reference_id', None)
 
         supabase = get_supabase()
         if user_id and user_id != "guest" and supabase:
