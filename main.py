@@ -35,7 +35,7 @@ async def generate_listing(
         )
 
         response = gemini_client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-3.8-flash',
             contents=[
                 types.Part.from_bytes(
                     data=image_bytes,
@@ -55,7 +55,6 @@ async def generate_listing(
         try:
             parsed_json = json.loads(raw_text)
         except json.JSONDecodeError:
-            # Fallback wrapper if model output was slightly malformed
             parsed_json = {
                 "title": "Marketplace Listing",
                 "pricing": "$25.00",
