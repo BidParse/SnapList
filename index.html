@@ -7,8 +7,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>SimpleList</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <script src="[https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2](https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2)"></script>
 </head>
 <body class="bg-black text-white p-4 sm:p-8 font-sans min-h-screen flex flex-col items-center">
     <div class="w-full max-w-2xl bg-[#111111] border border-purple-900 p-6 sm:p-10 rounded-xl shadow-[0_0_20px_rgba(128,0,128,0.3)]">
@@ -143,7 +143,7 @@
         let currentUser = null;
 
         try {
-            const SUPABASE_URL = 'https://wzmaaahyovsroeyjsmst.supabase.co';
+            const SUPABASE_URL = '[https://wzmaaahyovsroeyjsmst.supabase.co](https://wzmaaahyovsroeyjsmst.supabase.co)';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6bWFhYWh5b3Zzcm9leWpzbXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3MjcxODEsImV4cCI6MjEwNjMwMzE4MX0.4xpD5rACFpT32lPWyupWktbsPVBWypTjOFsweB_ku_o'; 
             supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
                 auth: {
@@ -191,12 +191,11 @@
                     currentUser = session.user;
                     
                     document.getElementById('profile-email-display').innerText = currentUser.email;
-                    document.getElementById('profile-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.email}&backgroundColor=222222`;
+                    document.getElementById('profile-avatar').src = `[https://api.dicebear.com/7.x/avataaars/svg?seed=$](https://api.dicebear.com/7.x/avataaars/svg?seed=$){currentUser.email}&backgroundColor=222222`;
                     if (currentUser.user_metadata && currentUser.user_metadata.bio) {
                         document.getElementById('profile-bio').value = currentUser.user_metadata.bio;
                     }
 
-                    // Safe lookup: Uses maybeSingle() so the app won't crash if a new user isn't in the Pro table yet
                     try {
                         const { data: profileData } = await supabaseClient.table('profiles').select('is_pro').eq('id', currentUser.id).maybeSingle();
                         if (profileData && profileData.is_pro) {
@@ -314,7 +313,7 @@
                 messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
                 
                 const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: 'https://snaplist-1xq3.onrender.com/?reset=true'
+                    redirectTo: '[https://snaplist-1xq3.onrender.com/?reset=true](https://snaplist-1xq3.onrender.com/?reset=true)'
                 });
                 
                 if (error) {
@@ -354,7 +353,7 @@
                 } else {
                     messageEl.innerText = "SUCCESS! GOING TO DASHBOARD...";
                     messageEl.className = "mt-5 text-sm font-bold text-green-400 whitespace-pre-wrap";
-                    setTimeout(() => window.location.href = 'https://snaplist-1xq3.onrender.com', 2000);
+                    setTimeout(() => window.location.href = '[https://snaplist-1xq3.onrender.com](https://snaplist-1xq3.onrender.com)', 2000);
                 }
             } catch (err) {
                 messageEl.innerText = "ERROR: " + err.message;
@@ -511,14 +510,24 @@
                 
                 if (data.result) {
                     try {
-                        let rawText = data.result;
-                        let jsonStart = rawText.indexOf('{');
-                        let jsonEnd = rawText.lastIndexOf('}');
+                        let parsed;
                         
-                        if (jsonStart === -1 || jsonEnd === -1) throw new Error("No structured data found.");
-                        
-                        let cleanJson = rawText.substring(jsonStart, jsonEnd + 1);
-                        const parsed = JSON.parse(cleanJson);
+                        // Check if backend already formatted it as a clean JSON object
+                        if (typeof data.result === 'object') {
+                            parsed = data.result;
+                        } else {
+                            // If it's a string, strip away hidden markdown elements (like ```json)
+                            let rawText = String(data.result);
+                            let cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+                            
+                            let jsonStart = cleanText.indexOf('{');
+                            let jsonEnd = cleanText.lastIndexOf('}');
+                            
+                            if (jsonStart === -1 || jsonEnd === -1) throw new Error("No structured data found.");
+                            
+                            let cleanJson = cleanText.substring(jsonStart, jsonEnd + 1);
+                            parsed = JSON.parse(cleanJson);
+                        }
                         
                         ['title', 'pricing', 'condition', 'ebay', 'facebook', 'poshmark', 'tags'].forEach(k => 
                             document.getElementById('out-'+k).innerText = parsed[k] || "N/A"
@@ -528,6 +537,7 @@
                         res.classList.remove('hidden'); 
                         res.classList.add('flex');
                     } catch (e) { 
+                        console.error("Parse Error: ", e, data.result);
                         stat.innerText = "🚨 Formatting error. Please hit 'Generate' again!"; 
                         stat.className = "mt-8 p-6 bg-[#1a0505] text-red-400 font-bold font-mono text-sm border border-red-800 rounded-md text-center shadow-[0_0_15px_rgba(255,0,0,0.2)]"; 
                     }
