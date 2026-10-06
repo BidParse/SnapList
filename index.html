@@ -145,7 +145,13 @@
         try {
             const SUPABASE_URL = 'https://wzmaaahyovsroeyjsmst.supabase.co';
             const SUPABASE_ANON_KEY = 'sb_publishable_7HpG3z67MVak6k9csFWmKQ_7MLqrMyP'; 
-            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true
+                }
+            });
         } catch (e) {
             console.error("Supabase failed to load", e);
         }
@@ -220,9 +226,9 @@
         async function handleLogin() {
             const messageEl = document.getElementById('auth-message');
             try {
-                if (!supabaseClient) throw new Error("Database connection blocked by browser.");
+                if (!supabaseClient) throw new Error("Database connection blocked.");
                 
-                const email = document.getElementById('email').value;
+                const email = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value;
                 
                 if (!email || !password) {
@@ -234,25 +240,17 @@
                 messageEl.innerText = "LOGGING IN...";
                 messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
                 
-                // Timeout wrapper to prevent infinite hanging
-                const loginPromise = supabaseClient.auth.signInWithPassword({ email, password });
-                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Connection timed out. Check internet or network.")), 8000));
-                
-                const { data, error } = await Promise.race([loginPromise, timeoutPromise]);
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 
                 if (error) {
-                    let errorMsg = error.message.toUpperCase();
-                    if (errorMsg.includes("INVALID")) {
-                        errorMsg = "INCORRECT EMAIL OR PASSWORD.";
-                    }
-                    messageEl.innerText = errorMsg;
+                    messageEl.innerText = error.message.toUpperCase();
                     messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
                 } else {
                     messageEl.innerText = "";
                     handleCheckUser();
                 }
             } catch (err) {
-                messageEl.innerText = "ERROR: " + err.message.toUpperCase();
+                messageEl.innerText = "NETWORK ERROR. TRY AGAIN.";
                 messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
             }
         }
