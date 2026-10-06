@@ -71,7 +71,7 @@
 
         <div id="inventory-section" class="hidden">
             <h3 class="text-xl font-black text-purple-400 uppercase tracking-wider mb-4">8-Platform Active Hub</h3>
-            <p class="text-xs text-gray-400 mb-6">Track your listings across eBay, Facebook, OfferUp, Poshmark, Mercari, Depop, Vinted, and Etsy.</p>
+            <p class="text-xs text-gray-400 mb-6">Track your listings and platform price targets.</p>
             <div id="inventory-list" class="space-y-4">
                 <p class="text-sm text-gray-500 text-center py-8">No saved items in hub.</p>
             </div>
@@ -108,7 +108,7 @@
 
             <div id="smart-results" class="mt-8 hidden flex-col gap-6">
                 <div class="p-6 border border-purple-600 bg-black rounded-md">
-                    <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Title & Graded Pricing Tiers</h4>
+                    <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Title & Graded Valuation Tiers</h4>
                     <p id="out-title" class="font-bold text-lg mb-2 text-white"></p>
                     <p id="out-pricing" class="text-sm text-green-400 font-mono font-bold"></p>
                     <div class="flex gap-2 mt-4">
@@ -122,7 +122,7 @@
                     <p id="out-condition" class="text-sm text-gray-300 whitespace-pre-wrap"></p>
                 </div>
 
-                <!-- 8 MARKETPLACE CARDS -->
+                <!-- 8 MARKETPLACE CARDS WITH REALISTIC RANGES -->
                 <div class="p-6 border border-blue-600 bg-black rounded-md">
                     <h4 class="text-xs text-blue-400 font-bold uppercase tracking-widest mb-2">eBay</h4>
                     <p id="out-ebay" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
@@ -349,7 +349,7 @@
             
             stat.classList.remove('hidden'); 
             res.classList.add('hidden');
-            stat.innerText = "PERFORMING OPTICAL GRADING & PRICING ACROSS 8 PLATFORMS... 🚀"; 
+            stat.innerText = "CALCULATING GRADE TIERS & PLATFORM RANGES... 🚀"; 
             
             try {
                 const response = await fetch('/api/generate-listing', { method: 'POST', body: fd });
@@ -408,7 +408,7 @@
                             <h4 class="font-bold text-white text-sm">${item.title}</h4>
                             <button onclick="deleteInventoryItem(${item.id})" class="text-xs text-red-400 font-bold uppercase">Delete</button>
                         </div>
-                        <p class="text-xs text-green-400 font-mono"><b>Pricing Tiers:</b> ${item.pricing}</p>
+                        <p class="text-xs text-green-400 font-mono"><b>Valuation Tiers:</b> ${item.pricing}</p>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-purple-900/50 text-xs">
                             <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.ebay ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'ebay')"> eBay</label>
                             <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.facebook ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'facebook')"> FB</label>
