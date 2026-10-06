@@ -15,13 +15,13 @@
         
         <div class="text-center mb-8">
             <h1 class="text-5xl sm:text-6xl font-black tracking-wide mb-4"><span class="text-purple-600">Simple</span><span class="text-white">List</span></h1>
-            <p class="text-xs text-[#C0C0C0] tracking-widest uppercase">AI Marketplace Generator & Inventory Hub</p>
+            <p class="text-xs text-[#C0C0C0] tracking-widest uppercase">AI 7-Platform Omnichannel Generator</p>
         </div>
 
         <div id="main-nav" class="hidden flex gap-2 mb-8 p-1 bg-black border border-purple-900/50 rounded-md">
-            <button onclick="showSection('generator-section')" id="tab-generator" class="flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors">Generator</button>
-            <button onclick="showSection('inventory-section')" id="tab-inventory" class="flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors">Listings Hub</button>
-            <button onclick="showSection('profile-section')" id="tab-profile" class="flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors">Profile</button>
+            <button onclick="showSection('generator-section')" id="tab-generator" class="flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors">Generator</button>
+            <button onclick="showSection('inventory-section')" id="tab-inventory" class="flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors">Hub</button>
+            <button onclick="showSection('profile-section')" id="tab-profile" class="flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors">Profile</button>
             <button onclick="handleLogout()" class="py-3 px-3 text-xs font-bold uppercase tracking-wider rounded hover:bg-red-900/30 text-red-400 transition-colors">Out</button>
         </div>
 
@@ -69,13 +69,11 @@
             </div>
         </div>
 
-        <!-- INVENTORY & ACTIVE LISTINGS HUB -->
         <div id="inventory-section" class="hidden">
-            <h3 class="text-xl font-black text-purple-400 uppercase tracking-wider mb-4">Active Cross-List Hub</h3>
-            <p class="text-xs text-gray-400 mb-6">Track your generated items and select which platforms they are actively posted on.</p>
-            
+            <h3 class="text-xl font-black text-purple-400 uppercase tracking-wider mb-4">7-Platform Active Hub</h3>
+            <p class="text-xs text-gray-400 mb-6">Track your listings across eBay, Facebook, Poshmark, Mercari, Depop, Vinted, and Etsy.</p>
             <div id="inventory-list" class="space-y-4">
-                <p class="text-sm text-gray-500 text-center py-8">No saved listings yet. Generate an item to add it here!</p>
+                <p class="text-sm text-gray-500 text-center py-8">No saved listings yet.</p>
             </div>
         </div>
 
@@ -83,7 +81,7 @@
             <div id="pro-banner-container" class="mb-10 p-6 bg-gradient-to-r from-purple-900/40 to-black border border-purple-700 rounded-md flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div>
                     <h3 class="font-black text-xl text-white uppercase tracking-wider">SimpleList <span class="text-purple-400">Pro</span></h3>
-                    <p id="pro-status-text" class="text-sm text-[#C0C0C0] mt-1">Unlock unlimited AI generations & grading.</p>
+                    <p id="pro-status-text" class="text-sm text-[#C0C0C0] mt-1">Unlock 7-platform omnichannel AI.</p>
                 </div>
                 <button id="checkout-btn" onclick="handleCheckout(event)" class="bg-white text-black px-6 py-3 rounded-md font-black uppercase tracking-wider hover:bg-[#C0C0C0] transition-colors whitespace-nowrap shadow-[0_0_15px_rgba(255,255,255,0.2)]">Upgrade - $9.99</button>
             </div>
@@ -103,14 +101,14 @@
                     <input type="file" id="image-upload" accept="image/*" onchange="previewImage(event)" class="w-full cursor-pointer text-[#C0C0C0] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-purple-900 file:text-white hover:file:bg-purple-700 transition-colors">
                 </div>
                 
-                <button id="generate-btn" onclick="handleGenerateListing()" class="bg-purple-600 text-white px-4 py-4 rounded-md w-full font-black text-lg uppercase tracking-wider hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(128,0,128,0.4)]">Analyze & Grade Item</button>
+                <button id="generate-btn" onclick="handleGenerateListing()" class="bg-purple-600 text-white px-4 py-4 rounded-md w-full font-black text-lg uppercase tracking-wider hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(128,0,128,0.4)]">Generate 7-Platform Listings</button>
             </div>
 
             <div id="status-message" class="mt-8 hidden p-6 border border-purple-800 rounded-md bg-black text-white font-mono text-sm shadow-inner text-center"></div>
 
             <div id="smart-results" class="mt-8 hidden flex-col gap-6">
                 <div class="p-6 border border-purple-600 bg-black rounded-md">
-                    <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Title & Grade Pricing Tiers</h4>
+                    <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Title & Pricing Tiers</h4>
                     <p id="out-title" class="font-bold text-lg mb-2 text-white"></p>
                     <p id="out-pricing" class="text-sm text-green-400 font-mono font-bold"></p>
                     <div class="flex gap-2 mt-4">
@@ -124,22 +122,47 @@
                     <p id="out-condition" class="text-sm text-gray-300 whitespace-pre-wrap"></p>
                 </div>
 
+                <!-- 7 MARKETPLACE CARDS -->
                 <div class="p-6 border border-blue-600 bg-black rounded-md">
-                    <h4 class="text-xs text-blue-400 font-bold uppercase tracking-widest mb-2">eBay / Mercari Listing</h4>
+                    <h4 class="text-xs text-blue-400 font-bold uppercase tracking-widest mb-2">eBay</h4>
                     <p id="out-ebay" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
                     <button onclick="copySpecific('out-ebay', this)" class="bg-blue-600 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors">Copy eBay</button>
                 </div>
 
                 <div class="p-6 border border-blue-400 bg-black rounded-md">
-                    <h4 class="text-xs text-blue-300 font-bold uppercase tracking-widest mb-2">Facebook / OfferUp Listing</h4>
+                    <h4 class="text-xs text-blue-300 font-bold uppercase tracking-widest mb-2">Facebook Marketplace</h4>
                     <p id="out-facebook" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
                     <button onclick="copySpecific('out-facebook', this)" class="bg-blue-500 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors">Copy Facebook</button>
                 </div>
 
                 <div class="p-6 border border-pink-600 bg-black rounded-md">
-                    <h4 class="text-xs text-pink-400 font-bold uppercase tracking-widest mb-2">Poshmark / Depop Listing</h4>
+                    <h4 class="text-xs text-pink-400 font-bold uppercase tracking-widest mb-2">Poshmark</h4>
                     <p id="out-poshmark" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
                     <button onclick="copySpecific('out-poshmark', this)" class="bg-pink-600 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors">Copy Poshmark</button>
+                </div>
+
+                <div class="p-6 border border-red-600 bg-black rounded-md">
+                    <h4 class="text-xs text-red-400 font-bold uppercase tracking-widest mb-2">Mercari</h4>
+                    <p id="out-mercari" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
+                    <button onclick="copySpecific('out-mercari', this)" class="bg-red-600 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors">Copy Mercari</button>
+                </div>
+
+                <div class="p-6 border border-orange-500 bg-black rounded-md">
+                    <h4 class="text-xs text-orange-400 font-bold uppercase tracking-widest mb-2">Depop</h4>
+                    <p id="out-depop" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
+                    <button onclick="copySpecific('out-depop', this)" class="bg-orange-600 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors">Copy Depop</button>
+                </div>
+
+                <div class="p-6 border border-teal-600 bg-black rounded-md">
+                    <h4 class="text-xs text-teal-400 font-bold uppercase tracking-widest mb-2">Vinted</h4>
+                    <p id="out-vinted" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
+                    <button onclick="copySpecific('out-vinted', this)" class="bg-teal-600 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors">Copy Vinted</button>
+                </div>
+
+                <div class="p-6 border border-yellow-600 bg-black rounded-md">
+                    <h4 class="text-xs text-yellow-400 font-bold uppercase tracking-widest mb-2">Etsy</h4>
+                    <p id="out-etsy" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
+                    <button onclick="copySpecific('out-etsy', this)" class="bg-yellow-600 text-black px-3 py-3 rounded text-sm font-black uppercase w-full transition-colors">Copy Etsy</button>
                 </div>
             </div>
         </div>
@@ -168,19 +191,16 @@
             
             ['tab-generator', 'tab-inventory', 'tab-profile'].forEach(id => {
                 const btn = document.getElementById(id);
-                if (btn) btn.className = 'flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors';
+                if (btn) btn.className = 'flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors';
             });
             
             if (sectionId === 'generator-section') {
-                const btn = document.getElementById('tab-generator');
-                if (btn) btn.className = 'flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors';
+                document.getElementById('tab-generator').className = 'flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors';
             } else if (sectionId === 'inventory-section') {
-                const btn = document.getElementById('tab-inventory');
-                if (btn) btn.className = 'flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors';
+                document.getElementById('tab-inventory').className = 'flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors';
                 loadUserInventory();
             } else {
-                const btn = document.getElementById('tab-profile');
-                if (btn) btn.className = 'flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors';
+                document.getElementById('tab-profile').className = 'flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors';
             }
 
             const target = document.getElementById(sectionId);
@@ -189,69 +209,33 @@
 
         async function handleCheckUser() {
             if (!supabaseClient) return;
-
-            const urlStr = window.location.href;
-            if (urlStr.includes('reset=true') || urlStr.includes('type=recovery') || urlStr.includes('access_token')) {
-                ['auth-section', 'main-nav', 'generator-section', 'profile-section', 'inventory-section'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.classList.add('hidden');
-                });
-                const rec = document.getElementById('recovery-section');
-                if (rec) rec.classList.remove('hidden');
-                return; 
-            }
-
             try {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
                     currentUser = session.user;
+                    document.getElementById('profile-email-display').innerText = currentUser.email;
+                    document.getElementById('profile-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.email}&backgroundColor=222222`;
                     
-                    const emailDisplay = document.getElementById('profile-email-display');
-                    if (emailDisplay) emailDisplay.innerText = currentUser.email;
-                    
-                    const avatar = document.getElementById('profile-avatar');
-                    if (avatar) avatar.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.email}&backgroundColor=222222`;
-                    
-                    if (currentUser.user_metadata && currentUser.user_metadata.bio) {
-                        const bio = document.getElementById('profile-bio');
-                        if (bio) bio.value = currentUser.user_metadata.bio;
-                    }
-
                     try {
                         const { data: profileData } = await supabaseClient.table('profiles').select('is_pro').eq('id', currentUser.id).maybeSingle();
                         if (profileData && profileData.is_pro) {
                             const checkoutBtn = document.getElementById('checkout-btn');
                             if (checkoutBtn) checkoutBtn.style.display = 'none';
-                            const statusText = document.getElementById('pro-status-text');
-                            if (statusText) {
-                                statusText.innerText = "✅ PRO ACTIVE — UNLIMITED GRADING & HUB";
-                                statusText.className = "text-sm text-green-400 font-bold uppercase tracking-wider mt-1";
-                            }
+                            document.getElementById('pro-status-text').innerText = "✅ PRO ACTIVE — 7-PLATFORM OMNICHANNEL UNLOCKED";
                         }
-                    } catch (e) {
-                        console.log("Profile data check skipped.");
-                    }
+                    } catch (e) {}
 
-                    ['auth-section', 'recovery-section'].forEach(id => {
-                        const el = document.getElementById(id);
-                        if (el) el.classList.add('hidden');
-                    });
-                    
-                    const nav = document.getElementById('main-nav');
-                    if (nav) {
-                        nav.classList.remove('hidden');
-                        nav.classList.add('flex');
-                    }
-                    
+                    document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('recovery-section').classList.add('hidden');
+                    document.getElementById('main-nav').classList.remove('hidden');
+                    document.getElementById('main-nav').classList.add('flex');
                     showSection('generator-section'); 
                 } else {
                     currentUser = null;
                     ['main-nav', 'generator-section', 'profile-section', 'inventory-section', 'recovery-section'].forEach(id => {
-                        const el = document.getElementById(id);
-                        if (el) el.classList.add('hidden');
+                        document.getElementById(id).classList.add('hidden');
                     });
-                    const auth = document.getElementById('auth-section');
-                    if (auth) auth.classList.remove('hidden');
+                    document.getElementById('auth-section').classList.remove('hidden');
                 }
             } catch (err) {
                 console.error("Session check failed", err);
@@ -261,163 +245,64 @@
         async function handleLogin() {
             const messageEl = document.getElementById('auth-message');
             try {
-                if (!supabaseClient) throw new Error("Database connection blocked by browser.");
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
-                
                 if (!email || !password) {
                     messageEl.innerText = "Please enter email and password.";
                     messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
                     return;
                 }
-                
                 messageEl.innerText = "LOGGING IN...";
-                messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
-                
-                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                
+                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) {
                     messageEl.innerText = error.message.toUpperCase();
                     messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
                 } else {
-                    messageEl.innerText = "SUCCESS! LOADING DASHBOARD...";
-                    messageEl.className = "mt-5 text-sm font-bold text-green-400 whitespace-pre-wrap";
                     handleCheckUser();
                 }
             } catch (err) {
                 messageEl.innerText = "ERROR: " + err.message;
-                messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
             }
         }
 
         async function handleSignUp() {
             const messageEl = document.getElementById('auth-message');
             try {
-                if (!supabaseClient) throw new Error("Database connection blocked by browser.");
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
-                
-                if (!email || !password) {
-                    messageEl.innerText = "Please enter email and password.";
-                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
-                    return;
-                }
-                
                 messageEl.innerText = "SIGNING UP...";
-                messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
-                
-                const { data, error } = await supabaseClient.auth.signUp({ email, password });
-                
+                const { error } = await supabaseClient.auth.signUp({ email, password });
                 if (error) {
                     messageEl.innerText = error.message.toUpperCase();
-                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
                 } else {
                     messageEl.innerText = "SUCCESS! PLEASE LOG IN.";
                     messageEl.className = "mt-5 text-sm font-bold text-green-400 whitespace-pre-wrap";
                 }
             } catch (err) {
                 messageEl.innerText = "ERROR: " + err.message;
-                messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
             }
         }
 
         async function handleResetPasswordRequest() {
-            const messageEl = document.getElementById('auth-message');
-            try {
-                if (!supabaseClient) throw new Error("Database connection blocked by browser.");
-                const email = document.getElementById('email').value;
-                if (!email) {
-                    messageEl.innerText = "PLEASE ENTER EMAIL ABOVE.";
-                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
-                    return;
-                }
-                messageEl.innerText = "SENDING LINK...";
-                messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
-                
-                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: 'https://snaplist-1xq3.onrender.com/?reset=true'
-                });
-                
-                if (error) {
-                    messageEl.innerText = "ERROR: " + error.message.toUpperCase();
-                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
-                } else {
-                    messageEl.innerText = "LINK SENT! CHECK EMAIL.";
-                    messageEl.className = "mt-5 text-sm font-bold text-green-400 whitespace-pre-wrap";
-                }
-            } catch (err) {
-                messageEl.innerText = "ERROR: " + err.message;
-                messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
-            }
-        }
-
-        async function handleUpdatePassword() {
-            const messageEl = document.getElementById('recovery-message');
-            try {
-                const newPassword = document.getElementById('new-password').value;
-                if (newPassword.length < 6) {
-                    messageEl.innerText = "MUST BE 6+ CHARACTERS.";
-                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
-                    return;
-                }
-                messageEl.innerText = "UPDATING...";
-                messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
-                
-                const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
-                if (error) {
-                    messageEl.innerText = "ERROR: " + error.message.toUpperCase();
-                    messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
-                } else {
-                    messageEl.innerText = "SUCCESS! GOING TO DASHBOARD...";
-                    messageEl.className = "mt-5 text-sm font-bold text-green-400 whitespace-pre-wrap";
-                    setTimeout(() => window.location.href = 'https://snaplist-1xq3.onrender.com', 2000);
-                }
-            } catch (err) {
-                messageEl.innerText = "ERROR: " + err.message;
-                messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
-            }
-        }
-
-        async function handleSaveProfile() {
-            const btn = event.target;
-            try {
-                const bioText = document.getElementById('profile-bio').value;
-                const originalText = btn.innerText;
-                btn.innerText = "SAVING...";
-                const { error } = await supabaseClient.auth.updateUser({ data: { bio: bioText } });
-                if (!error) {
-                    btn.innerText = "SAVED!";
-                    setTimeout(() => btn.innerText = originalText, 2000);
-                }
-            } catch (err) {
-                btn.innerText = "ERROR";
-            }
+            const email = document.getElementById('email').value;
+            await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: 'https://snaplist-1xq3.onrender.com/?reset=true' });
+            alert("Password reset link sent!");
         }
 
         async function handleLogout() {
-            try {
-                await supabaseClient.auth.signOut();
-                handleCheckUser();
-            } catch (err) {
-                console.error("Logout failed", err);
-            }
+            await supabaseClient.auth.signOut();
+            handleCheckUser();
         }
 
         async function handleCheckout(event) {
             if (!currentUser) return;
-            const btn = event.target;
-            btn.innerText = "LOADING...";
-            try {
-                const response = await fetch('/api/checkout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUser.id })
-                });
-                const data = await response.json();
-                if (data.url) window.location.href = data.url; 
-            } catch (err) { 
-                btn.innerText = "ERROR";
-            }
+            const response = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: currentUser.id })
+            });
+            const data = await response.json();
+            if (data.url) window.location.href = data.url;
         }
 
         function previewImage(event) {
@@ -446,13 +331,10 @@
             const res = document.getElementById('smart-results');
             const generateBtn = document.getElementById('generate-btn');
             
-            if (!file) {
-                alert("Select an image!");
-                return;
-            }
+            if (!file) { alert("Select an image!"); return; }
             
             generateBtn.disabled = true;
-            generateBtn.innerText = "ANALYZING & GRADING... ⏳";
+            generateBtn.innerText = "GENERATING 7 PLATFORMS... ⏳";
             
             const fd = new FormData(); 
             fd.append('image', file); 
@@ -461,8 +343,7 @@
             
             stat.classList.remove('hidden'); 
             res.classList.add('hidden');
-            stat.innerText = "PERFORMING EXPERT GRADING & PRICING... 🔍"; 
-            stat.className = "mt-8 p-6 border border-purple-800 rounded-md bg-black text-purple-400 font-bold font-mono text-sm shadow-inner text-center";
+            stat.innerText = "BUILDING CUSTOM LISTINGS FOR ALL 7 MARKETPLACES... 🚀"; 
             
             try {
                 const response = await fetch('/api/generate-listing', { method: 'POST', body: fd });
@@ -470,9 +351,9 @@
                 
                 if (data.result) {
                     let parsed = data.result;
-                    lastGeneratedItem = parsed; // Store for hub saving
+                    lastGeneratedItem = parsed;
                     
-                    ['title', 'pricing', 'condition', 'ebay', 'facebook', 'poshmark'].forEach(k => {
+                    ['title', 'pricing', 'condition', 'ebay', 'facebook', 'poshmark', 'mercari', 'depop', 'vinted', 'etsy'].forEach(k => {
                         const el = document.getElementById('out-' + k);
                         if (el) el.innerText = parsed[k] || "N/A";
                     });
@@ -487,58 +368,49 @@
                 stat.innerText = "CONNECTION ERROR."; 
             } finally {
                 generateBtn.disabled = false;
-                generateBtn.innerText = "Analyze & Grade Item";
+                generateBtn.innerText = "Generate 7-Platform Listings";
             }
         }
 
-        // --- LOCAL STORAGE / CROSS-LIST HUB FUNCTIONS ---
         function saveCurrentToListings() {
-            if (!lastGeneratedItem) {
-                alert("No generated item to save!");
-                return;
-            }
-            
+            if (!lastGeneratedItem) { alert("No generated item to save!"); return; }
             let savedItems = JSON.parse(localStorage.getItem('simplelist_inventory') || '[]');
-            
             const newItem = {
                 id: Date.now(),
-                title: lastGeneratedItem.title || "Untitled Item",
+                title: lastGeneratedItem.title || "Untitled",
                 pricing: lastGeneratedItem.pricing || "N/A",
-                condition: lastGeneratedItem.condition || "N/A",
-                platforms: { ebay: false, facebook: false, poshmark: false }
+                platforms: { ebay: false, facebook: false, poshmark: false, mercari: false, depop: false, vinted: false, etsy: false }
             };
-            
             savedItems.unshift(newItem);
             localStorage.setItem('simplelist_inventory', JSON.stringify(savedItems));
-            alert("💾 Saved to your Active Cross-List Hub!");
+            alert("💾 Saved to 7-Platform Hub!");
             showSection('inventory-section');
         }
 
         function loadUserInventory() {
             const container = document.getElementById('inventory-list');
             let savedItems = JSON.parse(localStorage.getItem('simplelist_inventory') || '[]');
-            
             if (savedItems.length === 0) {
-                container.innerHTML = `<p class="text-sm text-gray-500 text-center py-8">No saved listings yet. Generate an item and click 'Save to Hub'!</p>`;
+                container.innerHTML = `<p class="text-sm text-gray-500 text-center py-8">No saved items in hub.</p>`;
                 return;
             }
-            
             let html = '';
             savedItems.forEach(item => {
                 html += `
                     <div class="p-4 bg-black border border-purple-800 rounded-md space-y-3">
                         <div class="flex justify-between items-start">
                             <h4 class="font-bold text-white text-sm">${item.title}</h4>
-                            <button onclick="deleteInventoryItem(${item.id})" class="text-xs text-red-400 hover:text-red-300 font-bold uppercase">Delete</button>
+                            <button onclick="deleteInventoryItem(${item.id})" class="text-xs text-red-400 font-bold uppercase">Delete</button>
                         </div>
                         <p class="text-xs text-green-400 font-mono"><b>Pricing:</b> ${item.pricing}</p>
-                        <p class="text-xs text-gray-300"><b>Condition/Grade:</b> ${item.condition}</p>
-                        
-                        <div class="pt-2 border-t border-purple-900/50 flex flex-wrap gap-2 items-center justify-between text-xs">
-                            <span class="text-gray-400 uppercase font-bold">Listed On:</span>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-purple-900/50 text-xs">
                             <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.ebay ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'ebay')"> eBay</label>
-                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.facebook ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'facebook')"> Facebook</label>
-                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.poshmark ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'poshmark')"> Poshmark</label>
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.facebook ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'facebook')"> FB</label>
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.poshmark ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'poshmark')"> Posh</label>
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.mercari ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'mercari')"> Mercari</label>
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.depop ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'depop')"> Depop</label>
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.vinted ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'vinted')"> Vinted</label>
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.etsy ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'etsy')"> Etsy</label>
                         </div>
                     </div>
                 `;
@@ -549,9 +421,7 @@
         function togglePlatform(id, platform) {
             let savedItems = JSON.parse(localStorage.getItem('simplelist_inventory') || '[]');
             savedItems = savedItems.map(item => {
-                if (item.id === id) {
-                    item.platforms[platform] = !item.platforms[platform];
-                }
+                if (item.id === id) item.platforms[platform] = !item.platforms[platform];
                 return item;
             });
             localStorage.setItem('simplelist_inventory', JSON.stringify(savedItems));
