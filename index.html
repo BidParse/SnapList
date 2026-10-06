@@ -196,12 +196,17 @@
                         document.getElementById('profile-bio').value = currentUser.user_metadata.bio;
                     }
 
-                    const { data: profileData } = await supabaseClient.table('profiles').select('is_pro').eq('id', currentUser.id).single();
-                    if (profileData && profileData.is_pro) {
-                        const checkoutBtn = document.getElementById('checkout-btn');
-                        if (checkoutBtn) checkoutBtn.style.display = 'none';
-                        document.getElementById('pro-status-text').innerText = "✅ PRO ACTIVE — UNLIMITED GENERATIONS";
-                        document.getElementById('pro-status-text').className = "text-sm text-green-400 font-bold uppercase tracking-wider mt-1";
+                    // Safe lookup: Uses maybeSingle() so the app won't crash if a new user isn't in the Pro table yet
+                    try {
+                        const { data: profileData } = await supabaseClient.table('profiles').select('is_pro').eq('id', currentUser.id).maybeSingle();
+                        if (profileData && profileData.is_pro) {
+                            const checkoutBtn = document.getElementById('checkout-btn');
+                            if (checkoutBtn) checkoutBtn.style.display = 'none';
+                            document.getElementById('pro-status-text').innerText = "✅ PRO ACTIVE — UNLIMITED GENERATIONS";
+                            document.getElementById('pro-status-text').className = "text-sm text-green-400 font-bold uppercase tracking-wider mt-1";
+                        }
+                    } catch (e) {
+                        console.log("Profile data check skipped.");
                     }
 
                     document.getElementById('auth-section').classList.add('hidden');
@@ -250,7 +255,8 @@
                     messageEl.innerText = errorMsg;
                     messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
                 } else {
-                    messageEl.innerText = "";
+                    messageEl.innerText = "SUCCESS! LOADING DASHBOARD...";
+                    messageEl.className = "mt-5 text-sm font-bold text-green-400 whitespace-pre-wrap";
                     handleCheckUser();
                 }
             } catch (err) {
