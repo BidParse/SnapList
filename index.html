@@ -15,7 +15,7 @@
         
         <div class="text-center mb-8">
             <h1 class="text-5xl sm:text-6xl font-black tracking-wide mb-4"><span class="text-purple-600">Simple</span><span class="text-white">List</span></h1>
-            <p class="text-xs text-[#C0C0C0] tracking-widest uppercase">AI 7-Platform Omnichannel Generator</p>
+            <p class="text-xs text-[#C0C0C0] tracking-widest uppercase">AI 8-Platform Omnichannel Generator</p>
         </div>
 
         <div id="main-nav" class="hidden flex gap-2 mb-8 p-1 bg-black border border-purple-900/50 rounded-md">
@@ -70,10 +70,10 @@
         </div>
 
         <div id="inventory-section" class="hidden">
-            <h3 class="text-xl font-black text-purple-400 uppercase tracking-wider mb-4">7-Platform Active Hub</h3>
-            <p class="text-xs text-gray-400 mb-6">Track your listings across eBay, Facebook, Poshmark, Mercari, Depop, Vinted, and Etsy.</p>
+            <h3 class="text-xl font-black text-purple-400 uppercase tracking-wider mb-4">8-Platform Active Hub</h3>
+            <p class="text-xs text-gray-400 mb-6">Track your listings across eBay, Facebook, OfferUp, Poshmark, Mercari, Depop, Vinted, and Etsy.</p>
             <div id="inventory-list" class="space-y-4">
-                <p class="text-sm text-gray-500 text-center py-8">No saved listings yet.</p>
+                <p class="text-sm text-gray-500 text-center py-8">No saved items in hub.</p>
             </div>
         </div>
 
@@ -81,7 +81,7 @@
             <div id="pro-banner-container" class="mb-10 p-6 bg-gradient-to-r from-purple-900/40 to-black border border-purple-700 rounded-md flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div>
                     <h3 class="font-black text-xl text-white uppercase tracking-wider">SimpleList <span class="text-purple-400">Pro</span></h3>
-                    <p id="pro-status-text" class="text-sm text-[#C0C0C0] mt-1">Unlock 7-platform omnichannel AI.</p>
+                    <p id="pro-status-text" class="text-sm text-[#C0C0C0] mt-1">Unlock 8-platform omnichannel AI & grading.</p>
                 </div>
                 <button id="checkout-btn" onclick="handleCheckout(event)" class="bg-white text-black px-6 py-3 rounded-md font-black uppercase tracking-wider hover:bg-[#C0C0C0] transition-colors whitespace-nowrap shadow-[0_0_15px_rgba(255,255,255,0.2)]">Upgrade - $9.99</button>
             </div>
@@ -101,14 +101,14 @@
                     <input type="file" id="image-upload" accept="image/*" onchange="previewImage(event)" class="w-full cursor-pointer text-[#C0C0C0] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-purple-900 file:text-white hover:file:bg-purple-700 transition-colors">
                 </div>
                 
-                <button id="generate-btn" onclick="handleGenerateListing()" class="bg-purple-600 text-white px-4 py-4 rounded-md w-full font-black text-lg uppercase tracking-wider hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(128,0,128,0.4)]">Generate 7-Platform Listings</button>
+                <button id="generate-btn" onclick="handleGenerateListing()" class="bg-purple-600 text-white px-4 py-4 rounded-md w-full font-black text-lg uppercase tracking-wider hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(128,0,128,0.4)]">Generate listing, grade, and pricing</button>
             </div>
 
             <div id="status-message" class="mt-8 hidden p-6 border border-purple-800 rounded-md bg-black text-white font-mono text-sm shadow-inner text-center"></div>
 
             <div id="smart-results" class="mt-8 hidden flex-col gap-6">
                 <div class="p-6 border border-purple-600 bg-black rounded-md">
-                    <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Title & Pricing Tiers</h4>
+                    <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Title & Graded Pricing Tiers</h4>
                     <p id="out-title" class="font-bold text-lg mb-2 text-white"></p>
                     <p id="out-pricing" class="text-sm text-green-400 font-mono font-bold"></p>
                     <div class="flex gap-2 mt-4">
@@ -122,7 +122,7 @@
                     <p id="out-condition" class="text-sm text-gray-300 whitespace-pre-wrap"></p>
                 </div>
 
-                <!-- 7 MARKETPLACE CARDS -->
+                <!-- 8 MARKETPLACE CARDS -->
                 <div class="p-6 border border-blue-600 bg-black rounded-md">
                     <h4 class="text-xs text-blue-400 font-bold uppercase tracking-widest mb-2">eBay</h4>
                     <p id="out-ebay" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
@@ -133,6 +133,12 @@
                     <h4 class="text-xs text-blue-300 font-bold uppercase tracking-widest mb-2">Facebook Marketplace</h4>
                     <p id="out-facebook" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
                     <button onclick="copySpecific('out-facebook', this)" class="bg-blue-500 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors">Copy Facebook</button>
+                </div>
+
+                <div class="p-6 border border-yellow-500 bg-black rounded-md">
+                    <h4 class="text-xs text-yellow-400 font-bold uppercase tracking-widest mb-2">OfferUp</h4>
+                    <p id="out-offerup" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
+                    <button onclick="copySpecific('out-offerup', this)" class="bg-yellow-600 text-black px-3 py-3 rounded text-sm font-black uppercase w-full transition-colors">Copy OfferUp</button>
                 </div>
 
                 <div class="p-6 border border-pink-600 bg-black rounded-md">
@@ -221,7 +227,7 @@
                         if (profileData && profileData.is_pro) {
                             const checkoutBtn = document.getElementById('checkout-btn');
                             if (checkoutBtn) checkoutBtn.style.display = 'none';
-                            document.getElementById('pro-status-text').innerText = "✅ PRO ACTIVE — 7-PLATFORM OMNICHANNEL UNLOCKED";
+                            document.getElementById('pro-status-text').innerText = "✅ PRO ACTIVE — 8-PLATFORM OMNICHANNEL UNLOCKED";
                         }
                     } catch (e) {}
 
@@ -334,7 +340,7 @@
             if (!file) { alert("Select an image!"); return; }
             
             generateBtn.disabled = true;
-            generateBtn.innerText = "GENERATING 7 PLATFORMS... ⏳";
+            generateBtn.innerText = "GENERATING LISTING, GRADE & PRICING... ⏳";
             
             const fd = new FormData(); 
             fd.append('image', file); 
@@ -343,7 +349,7 @@
             
             stat.classList.remove('hidden'); 
             res.classList.add('hidden');
-            stat.innerText = "BUILDING CUSTOM LISTINGS FOR ALL 7 MARKETPLACES... 🚀"; 
+            stat.innerText = "PERFORMING OPTICAL GRADING & PRICING ACROSS 8 PLATFORMS... 🚀"; 
             
             try {
                 const response = await fetch('/api/generate-listing', { method: 'POST', body: fd });
@@ -353,7 +359,7 @@
                     let parsed = data.result;
                     lastGeneratedItem = parsed;
                     
-                    ['title', 'pricing', 'condition', 'ebay', 'facebook', 'poshmark', 'mercari', 'depop', 'vinted', 'etsy'].forEach(k => {
+                    ['title', 'pricing', 'condition', 'ebay', 'facebook', 'offerup', 'poshmark', 'mercari', 'depop', 'vinted', 'etsy'].forEach(k => {
                         const el = document.getElementById('out-' + k);
                         if (el) el.innerText = parsed[k] || "N/A";
                     });
@@ -368,7 +374,7 @@
                 stat.innerText = "CONNECTION ERROR."; 
             } finally {
                 generateBtn.disabled = false;
-                generateBtn.innerText = "Generate 7-Platform Listings";
+                generateBtn.innerText = "Generate listing, grade, and pricing";
             }
         }
 
@@ -379,11 +385,11 @@
                 id: Date.now(),
                 title: lastGeneratedItem.title || "Untitled",
                 pricing: lastGeneratedItem.pricing || "N/A",
-                platforms: { ebay: false, facebook: false, poshmark: false, mercari: false, depop: false, vinted: false, etsy: false }
+                platforms: { ebay: false, facebook: false, offerup: false, poshmark: false, mercari: false, depop: false, vinted: false, etsy: false }
             };
             savedItems.unshift(newItem);
             localStorage.setItem('simplelist_inventory', JSON.stringify(savedItems));
-            alert("💾 Saved to 7-Platform Hub!");
+            alert("💾 Saved to 8-Platform Hub!");
             showSection('inventory-section');
         }
 
@@ -402,10 +408,11 @@
                             <h4 class="font-bold text-white text-sm">${item.title}</h4>
                             <button onclick="deleteInventoryItem(${item.id})" class="text-xs text-red-400 font-bold uppercase">Delete</button>
                         </div>
-                        <p class="text-xs text-green-400 font-mono"><b>Pricing:</b> ${item.pricing}</p>
+                        <p class="text-xs text-green-400 font-mono"><b>Pricing Tiers:</b> ${item.pricing}</p>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-purple-900/50 text-xs">
                             <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.ebay ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'ebay')"> eBay</label>
                             <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.facebook ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'facebook')"> FB</label>
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.offerup ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'offerup')"> OfferUp</label>
                             <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.poshmark ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'poshmark')"> Posh</label>
                             <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.mercari ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'mercari')"> Mercari</label>
                             <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.depop ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'depop')"> Depop</label>
