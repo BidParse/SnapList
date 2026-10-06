@@ -15,7 +15,7 @@
         
         <div class="text-center mb-8">
             <h1 class="text-5xl sm:text-6xl font-black tracking-wide mb-4"><span class="text-purple-600">Simple</span><span class="text-white">List</span></h1>
-            <p class="text-xs text-[#C0C0C0] tracking-widest uppercase">AI Marketplace Generator</p>
+            <p class="text-xs text-[#C0C0C0] tracking-widest uppercase">AI Marketplace Generator & Card Grader</p>
         </div>
 
         <div id="main-nav" class="hidden flex gap-2 mb-8 p-1 bg-black border border-purple-900/50 rounded-md">
@@ -79,7 +79,7 @@
             <div id="pro-banner-container" class="mb-10 p-6 bg-gradient-to-r from-purple-900/40 to-black border border-purple-700 rounded-md flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div>
                     <h3 class="font-black text-xl text-white uppercase tracking-wider">SimpleList <span class="text-purple-400">Pro</span></h3>
-                    <p id="pro-status-text" class="text-sm text-[#C0C0C0] mt-1">Unlock unlimited AI generations.</p>
+                    <p id="pro-status-text" class="text-sm text-[#C0C0C0] mt-1">Unlock unlimited AI generations & grading.</p>
                 </div>
                 <button id="checkout-btn" onclick="handleCheckout(event)" class="bg-white text-black px-6 py-3 rounded-md font-black uppercase tracking-wider hover:bg-[#C0C0C0] transition-colors whitespace-nowrap shadow-[0_0_15px_rgba(255,255,255,0.2)]">Upgrade - $9.99</button>
             </div>
@@ -87,8 +87,8 @@
             <div>
                 <select id="category-select" class="w-full bg-black border border-purple-700 text-[#C0C0C0] p-4 mb-4 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-400 font-bold uppercase tracking-wide cursor-pointer hover:border-purple-500 transition-colors">
                     <option value="General">Auto-Detect (General Listing)</option>
+                    <option value="Trading Cards & Collectibles">Trading Cards & Collectibles (Grading Mode)</option>
                     <option value="Sneakers & Shoes">Sneakers & Shoes</option>
-                    <option value="Trading Cards & Collectibles">Trading Cards & Collectibles</option>
                     <option value="Electronics & Computers">Electronics & Computers</option>
                     <option value="Vehicles & Auto Parts">Vehicles & Auto Parts</option>
                     <option value="Clothing & Apparel">Clothing & Apparel</option>
@@ -99,38 +99,38 @@
                     <input type="file" id="image-upload" accept="image/*" onchange="previewImage(event)" class="w-full cursor-pointer text-[#C0C0C0] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-purple-900 file:text-white hover:file:bg-purple-700 transition-colors">
                 </div>
                 
-                <button id="generate-btn" onclick="handleGenerateListing()" class="bg-purple-600 text-white px-4 py-4 rounded-md w-full font-black text-lg uppercase tracking-wider hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(128,0,128,0.4)]">Generate AI Listing</button>
+                <button id="generate-btn" onclick="handleGenerateListing()" class="bg-purple-600 text-white px-4 py-4 rounded-md w-full font-black text-lg uppercase tracking-wider hover:bg-purple-500 transition-colors shadow-[0_0_15px_rgba(128,0,128,0.4)]">Analyze & Grade Item</button>
             </div>
 
             <div id="status-message" class="mt-8 hidden p-6 border border-purple-800 rounded-md bg-black text-white font-mono text-sm shadow-inner text-center"></div>
 
             <div id="smart-results" class="mt-8 hidden flex-col gap-6">
                 <div class="p-6 border border-purple-600 bg-black rounded-md">
-                    <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Title & Pricing</h4>
+                    <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Title & Grade Pricing Tiers</h4>
                     <p id="out-title" class="font-bold text-lg mb-2 text-white"></p>
-                    <p id="out-pricing" class="text-sm text-green-400 font-mono"></p>
+                    <p id="out-pricing" class="text-sm text-green-400 font-mono font-bold"></p>
                     <button onclick="copySpecific('out-title', this)" class="mt-4 bg-purple-900 text-white px-3 py-2 rounded text-xs font-bold uppercase w-full transition-colors">Copy Title</button>
                 </div>
 
                 <div class="p-6 border border-gray-700 bg-[#0a0a0a] rounded-md">
-                    <h4 class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2">Condition Check</h4>
-                    <p id="out-condition" class="text-sm text-gray-300"></p>
+                    <h4 class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2">Expert Condition & Grade Breakdown</h4>
+                    <p id="out-condition" class="text-sm text-gray-300 whitespace-pre-wrap"></p>
                 </div>
 
                 <div class="p-6 border border-blue-600 bg-black rounded-md">
-                    <h4 class="text-xs text-blue-400 font-bold uppercase tracking-widest mb-2">eBay / Mercari</h4>
+                    <h4 class="text-xs text-blue-400 font-bold uppercase tracking-widest mb-2">eBay / Mercari Listing</h4>
                     <p id="out-ebay" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
                     <button onclick="copySpecific('out-ebay', this)" class="bg-blue-600 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors">Copy eBay</button>
                 </div>
 
                 <div class="p-6 border border-blue-400 bg-black rounded-md">
-                    <h4 class="text-xs text-blue-300 font-bold uppercase tracking-widest mb-2">Facebook / OfferUp</h4>
+                    <h4 class="text-xs text-blue-300 font-bold uppercase tracking-widest mb-2">Facebook / OfferUp Listing</h4>
                     <p id="out-facebook" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
                     <button onclick="copySpecific('out-facebook', this)" class="bg-blue-500 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors">Copy Facebook</button>
                 </div>
 
                 <div class="p-6 border border-pink-600 bg-black rounded-md">
-                    <h4 class="text-xs text-pink-400 font-bold uppercase tracking-widest mb-2">Poshmark / Depop</h4>
+                    <h4 class="text-xs text-pink-400 font-bold uppercase tracking-widest mb-2">Poshmark / Depop Listing</h4>
                     <p id="out-poshmark" class="text-sm text-gray-200 whitespace-pre-wrap mb-4"></p>
                     <button onclick="copySpecific('out-poshmark', this)" class="bg-pink-600 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors">Copy Poshmark</button>
                 </div>
@@ -146,11 +146,7 @@
             const SUPABASE_URL = 'https://wzmaaahyovsroeyjsmst.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6bWFhYWh5b3Zzcm9leWpzbXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3MjcxODEsImV4cCI6MjEwNjMwMzE4MX0.4xpD5rACFpT32lPWyupWktbsPVBWypTjOFsweB_ku_o'; 
             supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                auth: {
-                    persistSession: true,
-                    autoRefreshToken: true,
-                    detectSessionInUrl: true
-                }
+                auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
             });
         } catch (e) {
             console.error("Supabase failed to load", e);
@@ -201,7 +197,7 @@
                         if (profileData && profileData.is_pro) {
                             const checkoutBtn = document.getElementById('checkout-btn');
                             if (checkoutBtn) checkoutBtn.style.display = 'none';
-                            document.getElementById('pro-status-text').innerText = "✅ PRO ACTIVE — UNLIMITED GENERATIONS";
+                            document.getElementById('pro-status-text').innerText = "✅ PRO ACTIVE — UNLIMITED GRADING";
                             document.getElementById('pro-status-text').className = "text-sm text-green-400 font-bold uppercase tracking-wider mt-1";
                         }
                     } catch (e) {
@@ -491,7 +487,7 @@
             }
             
             generateBtn.disabled = true;
-            generateBtn.innerText = "GENERATING...";
+            generateBtn.innerText = "ANALYZING & GRADING... ⏳";
             
             const fd = new FormData(); 
             fd.append('image', file); 
@@ -500,7 +496,7 @@
             
             stat.classList.remove('hidden'); 
             res.classList.add('hidden');
-            stat.innerText = "ANALYZING... ⏳"; 
+            stat.innerText = "PERFORMING OPTICAL CENTERING & SURFACE GRADING... 🔍"; 
             stat.className = "mt-8 p-6 border border-purple-800 rounded-md bg-black text-purple-400 font-bold font-mono text-sm shadow-inner text-center";
             
             try {
@@ -511,7 +507,6 @@
                     try {
                         let parsed = data.result;
                         
-                        // Safely populate available DOM elements without throwing errors
                         ['title', 'pricing', 'condition', 'ebay', 'facebook', 'poshmark'].forEach(k => {
                             const el = document.getElementById('out-' + k);
                             if (el) el.innerText = parsed[k] || "N/A";
@@ -522,7 +517,7 @@
                         res.classList.add('flex');
                     } catch (e) { 
                         console.error("Parse Error: ", e, data.result);
-                        stat.innerText = "🚨 Formatting error. Please hit 'Generate' again!"; 
+                        stat.innerText = "🚨 Formatting error. Please hit 'Analyze & Grade' again!"; 
                         stat.className = "mt-8 p-6 bg-[#1a0505] text-red-400 font-bold font-mono text-sm border border-red-800 rounded-md text-center shadow-[0_0_15px_rgba(255,0,0,0.2)]"; 
                     }
                 } else { 
@@ -534,7 +529,7 @@
                 stat.className = "mt-8 p-6 bg-[#1a0505] text-red-400 font-bold font-mono text-sm border border-red-800 rounded-md text-center shadow-[0_0_15px_rgba(255,0,0,0.2)]";
             } finally {
                 generateBtn.disabled = false;
-                generateBtn.innerText = "GENERATE AI LISTING";
+                generateBtn.innerText = "Analyze & Grade Item";
             }
         }
 
