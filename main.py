@@ -29,12 +29,12 @@ async def generate_listing(
         
         prompt = (
             f"Analyze this item for an online marketplace listing under category: {category}. "
-            "If this is a trading card, collectible, or graded item, perform an expert optical grading inspection "
+            "If this is a trading card or collectible, perform an expert optical grading inspection "
             "analyzing centering, corners, edges, and surface condition to estimate a professional grade "
-            "(e.g., Raw, PSA 7, PSA 8, PSA 9, PSA 10 Gem Mint). "
-            "You must return ONLY a valid JSON object with exactly these keys: "
+            "(Raw, PSA 7, PSA 8, PSA 9, PSA 10) with specific valuation tiers and realistic selling price ranges for each platform. "
+            "You must return ONLY a valid JSON object with EXACTLY these string values for keys: "
             "title, pricing, condition, ebay, facebook, offerup, poshmark, mercari, depop, vinted, etsy, tags. "
-            "Ensure 'pricing' contains both professional grade-based valuation tiers (Raw vs Graded) AND specific realistic selling price ranges tailored for each platform. "
+            "Do not nest objects. Every value must be a plain text string. "
             "Do not include any markdown formatting like ```json or ```, just return the raw JSON string."
         )
 
@@ -59,11 +59,19 @@ async def generate_listing(
                 parsed_json = json.loads(json_str)
             else:
                 parsed_json = json.loads(raw_text)
+            
+            # Ensure all values are strings to prevent [object Object] rendering
+            for k, v in parsed_json.items():
+                if isinstance(v, dict):
+                    parsed_json[k] = json.dumps(v)
+                elif not isinstance(v, str):
+                    parsed_json[k] = str(v)
+
         except Exception:
             parsed_json = {
                 "title": f"Marketplace Listing - {category}",
-                "pricing": "Raw Value: $15-$25 | PSA 9: $50-$70 | PSA 10: $130-$160",
-                "condition": "Expert Grade Estimate: PSA 9 (Near Mint-Mint) - Surface and corners inspected.",
+                "pricing": "Raw: $15-$25 | PSA 9: $50-$70 | PSA 10: $130-$160",
+                "condition": "Expert Grade Estimate: PSA 9 (Near Mint-Mint)",
                 "ebay": raw_text,
                 "facebook": raw_text,
                 "offerup": raw_text,
