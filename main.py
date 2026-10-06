@@ -29,13 +29,10 @@ async def generate_listing(
         
         prompt = (
             f"Analyze this item for an online marketplace listing under category: {category}. "
-            "If this is a trading card or collectible, perform a rigorous expert grading inspection "
-            "analyzing centering, corners, edges, and surface condition to estimate a professional grade "
-            "(e.g., Raw/Ungraded, PSA 7, PSA 8, PSA 9, PSA 10 Gem Mint) and provide a market pricing range "
-            "for each grade tier. "
+            "Perform rigorous expert grading if this is a card or collectible. "
             "You must return ONLY a valid JSON object with exactly these keys: "
-            "title, pricing, condition, ebay, facebook, poshmark, tags. "
-            "Ensure 'pricing' contains grade-based price tiers (e.g., Raw: $X | PSA 9: $Y | PSA 10: $Z). "
+            "title, pricing, condition, ebay, facebook, poshmark, mercari, depop, vinted, etsy, tags. "
+            "Provide tailored sales descriptions optimized for each platform (eBay, Facebook, Poshmark, Mercari, Depop, Vinted, Etsy). "
             "Do not include any markdown formatting like ```json or ```, just return the raw JSON string."
         )
 
@@ -63,11 +60,15 @@ async def generate_listing(
         except Exception:
             parsed_json = {
                 "title": f"Marketplace Listing - {category}",
-                "pricing": "Raw: $20.00 | PSA 9: $60.00 | PSA 10: $150.00",
-                "condition": "Estimated Grade: PSA 9 (Near Mint-Mint) - Minor edge wear observed.",
+                "pricing": "Raw: $20.00 | Graded Tiers Available",
+                "condition": "Good pre-owned condition.",
                 "ebay": raw_text,
                 "facebook": raw_text,
                 "poshmark": raw_text,
+                "mercari": raw_text,
+                "depop": raw_text,
+                "vinted": raw_text,
+                "etsy": raw_text,
                 "tags": "#marketplace #resale"
             }
 
