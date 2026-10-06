@@ -7,8 +7,9 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>SimpleList</title>
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-    <script src="[https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2](https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2)"></script>
+    <!-- Replaced blocking script CDN with stable stylesheet CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-black text-white p-4 sm:p-8 font-sans min-h-screen flex flex-col items-center">
     <div class="w-full max-w-2xl bg-[#111111] border border-purple-900 p-6 sm:p-10 rounded-xl shadow-[0_0_20px_rgba(128,0,128,0.3)]">
@@ -143,7 +144,7 @@
         let currentUser = null;
 
         try {
-            const SUPABASE_URL = '[https://wzmaaahyovsroeyjsmst.supabase.co](https://wzmaaahyovsroeyjsmst.supabase.co)';
+            const SUPABASE_URL = 'https://wzmaaahyovsroeyjsmst.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6bWFhYWh5b3Zzcm9leWpzbXN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3MjcxODEsImV4cCI6MjEwNjMwMzE4MX0.4xpD5rACFpT32lPWyupWktbsPVBWypTjOFsweB_ku_o'; 
             supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
                 auth: {
@@ -191,7 +192,7 @@
                     currentUser = session.user;
                     
                     document.getElementById('profile-email-display').innerText = currentUser.email;
-                    document.getElementById('profile-avatar').src = `[https://api.dicebear.com/7.x/avataaars/svg?seed=$](https://api.dicebear.com/7.x/avataaars/svg?seed=$){currentUser.email}&backgroundColor=222222`;
+                    document.getElementById('profile-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.email}&backgroundColor=222222`;
                     if (currentUser.user_metadata && currentUser.user_metadata.bio) {
                         document.getElementById('profile-bio').value = currentUser.user_metadata.bio;
                     }
@@ -313,7 +314,7 @@
                 messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
                 
                 const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: '[https://snaplist-1xq3.onrender.com/?reset=true](https://snaplist-1xq3.onrender.com/?reset=true)'
+                    redirectTo: 'https://snaplist-1xq3.onrender.com/?reset=true'
                 });
                 
                 if (error) {
@@ -353,7 +354,7 @@
                 } else {
                     messageEl.innerText = "SUCCESS! GOING TO DASHBOARD...";
                     messageEl.className = "mt-5 text-sm font-bold text-green-400 whitespace-pre-wrap";
-                    setTimeout(() => window.location.href = '[https://snaplist-1xq3.onrender.com](https://snaplist-1xq3.onrender.com)', 2000);
+                    setTimeout(() => window.location.href = 'https://snaplist-1xq3.onrender.com', 2000);
                 }
             } catch (err) {
                 messageEl.innerText = "ERROR: " + err.message;
@@ -490,7 +491,6 @@
                 return;
             }
             
-            // Prevent double-clicking crashes
             generateBtn.disabled = true;
             generateBtn.innerText = "GENERATING...";
             
@@ -511,12 +511,9 @@
                 if (data.result) {
                     try {
                         let parsed;
-                        
-                        // Check if backend already formatted it as a clean JSON object
                         if (typeof data.result === 'object') {
                             parsed = data.result;
                         } else {
-                            // If it's a string, strip away hidden markdown elements (like ```json)
                             let rawText = String(data.result);
                             let cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
                             
