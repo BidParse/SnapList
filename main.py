@@ -48,17 +48,16 @@ async def generate_listing(
 
         raw_text = response.text.strip()
         
-        # Bulletproof extraction: find the first '{' and last '}'
+        # Bulletproof extraction: safely find the JSON block
         parsed_json = None
         try:
-            match = re.search(r\{.*\}", raw_text, re.DOTALL)
+            match = re.search(r"\{.*\}", raw_text, re.DOTALL)
             if match:
                 json_str = match.group(0)
                 parsed_json = json.loads(json_str)
             else:
                 parsed_json = json.loads(raw_text)
         except Exception:
-            # Fallback wrapper if extraction fails
             parsed_json = {
                 "title": f"Marketplace Listing - {category}",
                 "pricing": "$25.00",
