@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -47,16 +48,19 @@ async def generate_listing(
 
         raw_text = response.text.strip()
         
-        # Clean markdown code blocks if the AI included them despite instructions
-        if raw_text.startswith("```"):
-            raw_text = raw_text.replace("```json", "").replace("```", "").strip()
-
-        # Parse and re-serialize to guarantee valid JSON structure
+        # Bulletproof extraction: find the first '{' and last '}'
+        parsed_json = None
         try:
-            parsed_json = json.loads(raw_text)
-        except json.JSONDecodeError:
+            match = re.search(r\{.*\}", raw_text, re.DOTALL)
+            if match:
+                json_str = match.group(0)
+                parsed_json = json.loads(json_str)
+            else:
+                parsed_json = json.loads(raw_text)
+        except Exception:
+            # Fallback wrapper if extraction fails
             parsed_json = {
-                "title": "Marketplace Listing",
+                "title": f"Marketplace Listing - {category}",
                 "pricing": "$25.00",
                 "condition": "Good pre-owned condition.",
                 "ebay": raw_text,
