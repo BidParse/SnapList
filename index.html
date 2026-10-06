@@ -190,7 +190,6 @@
                         document.getElementById('profile-bio').value = currentUser.user_metadata.bio;
                     }
 
-                    // Check if user is Pro in Supabase database
                     const { data: profileData } = await supabaseClient.table('profiles').select('is_pro').eq('id', currentUser.id).single();
                     if (profileData && profileData.is_pro) {
                         const checkoutBtn = document.getElementById('checkout-btn');
@@ -235,12 +234,16 @@
                 messageEl.innerText = "LOGGING IN...";
                 messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
                 
-                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                // Timeout wrapper to prevent infinite hanging
+                const loginPromise = supabaseClient.auth.signInWithPassword({ email, password });
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Connection timed out. Check internet or network.")), 8000));
+                
+                const { data, error } = await Promise.race([loginPromise, timeoutPromise]);
                 
                 if (error) {
                     let errorMsg = error.message.toUpperCase();
                     if (errorMsg.includes("INVALID")) {
-                        errorMsg = "INCORRECT EMAIL OR PASSWORD.\n\nHINT: MUST BE 6+ CHARACTERS.";
+                        errorMsg = "INCORRECT EMAIL OR PASSWORD.";
                     }
                     messageEl.innerText = errorMsg;
                     messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
@@ -249,7 +252,7 @@
                     handleCheckUser();
                 }
             } catch (err) {
-                messageEl.innerText = "ERROR: " + err.message;
+                messageEl.innerText = "ERROR: " + err.message.toUpperCase();
                 messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
             }
         }
@@ -480,7 +483,6 @@
                 return;
             }
             
-            // Prevent double-clicking crashes
             generateBtn.disabled = true;
             generateBtn.innerText = "GENERATING...";
             
