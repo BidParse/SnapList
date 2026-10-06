@@ -1,199 +1,76 @@
 import os
-import stripe
-from fastapi import FastAPI, Request, HTTPException, UploadFile, File, Form
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
-from fastapi.middleware.cors import CORSMiddleware
+import json
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from google import genai
 from google.genai import types
-from supabase import create_client, Client
 
-# Initialize app
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Dynamic Service Loaders (Bypasses Render boot-time caching)
-def get_supabase():
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_SERVICE_KEY")
-    if url and key:
-        return create_client(url, key)
-    return None
-
-def get_gemini():
-    key = os.getenv("GEMINI_API_KEY")
-    if key:
-        return genai.Client(api_key=key.strip())
-    return None
+# Initialize Gemini Client using the new google-genai SDK
+gemini_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 @app.get("/", response_class=HTMLResponse)
-async def serve_frontend():
-    try:
-        with open("index.html", "r") as f:
+async def read_index():
+    if os.path.exists("index.html"):
+        with open("index.html", "r", encoding="utf-8") as f:
             return f.read()
-    except FileNotFoundError:
-        return "<html><body><h1>index.html not found.</h1></body></html>"
-
-@app.get("/logo.png")
-async def serve_logo():
-    if os.path.exists("logo.png"):
-        return FileResponse("logo.png")
-    return HTMLResponse(status_code=404, content="Logo not found")
+    return "<h1>SimpleList Backend Online</h1><p>index.html missing from root directory.</p>"
 
 @app.post("/api/generate-listing")
 async def generate_listing(
-    image: UploadFile = File(...), 
+    image: UploadFile = File(...),
     category: str = Form("General"),
-    user_id: str = Form(None)
+    user_id: str = Form(...)
 ):
-    gemini_client = get_gemini()
-    supabase = get_supabase()
-    
-    if not gemini_client:
-        return JSONResponse(content={"error": "Server missing Gemini API Key."}, status_code=500)
-        
-    if not user_id or not supabase:
-        return JSONResponse(content={"error": "Please log in to generate listings."}, status_code=401)
-        
     try:
-        profile_response = supabase.table("profiles").select("is_pro, generation_count").eq("id", user_id).execute()
-        if not profile_response.data:
-            return JSONResponse(content={"error": "User profile not found. Please log out and back in."}, status_code=404)
+        image_bytes = await image.read()
         
-        profile = profile_response.data[0]
-        is_pro = profile.get("is_pro", False)
-        generation_count = profile.get("generation_count", 0)
-        
-        if not is_pro and generation_count >= 3:
-            return JSONResponse(
-                content={"error": "FREE TRIAL ENDED! You have used your 3 free listings. Click 'UPGRADE - $9.99' above for unlimited generations!"}
-            )
-    except Exception as e:
-        return JSONResponse(content={"error": "Database connection error."}, status_code=500)
-    
-    try:
-        image_data = await image.read()
-        
-        category_instructions = {
-            "Sneakers & Shoes": "Focus on colorway, size tags, visible wear on outsoles, authenticity indicators, and box condition.",
-            "Trading Cards & Collectibles": "Focus on centering, corner sharpness, edge wear, surface condition, and grading value.",
-            "Electronics & Computers": "Focus on identifying make, model, specs (RAM, storage, processor), ports, and physical condition.",
-            "Vehicles & Auto Parts": "Identify the vehicle part or model. Focus on compatibility, visible wear, OEM markers.",
-            "Clothing & Apparel": "Focus on brand, aesthetic style, visible size, material quality, and measurements.",
-            "General": "Provide a comprehensive breakdown of the item's visual condition and standard features."
-        }
-        
-        niche_focus = category_instructions.get(category, category_instructions["General"])
-        
-        prompt = f"""You are an elite e-commerce copywriter.
-        Category: {category}. 
-        CRITICAL NICHE INSTRUCTION: {niche_focus}
+        prompt = (
+            f"Analyze this item for an online marketplace listing under category: {category}. "
+            "You must return ONLY a valid JSON object with exactly these keys: "
+            "title, pricing, condition, ebay, facebook, poshmark, tags. "
+            "Do not include any markdown formatting like ```json or ```, just return the raw JSON string."
+        )
 
-        Analyze this product image and generate a master listing package. 
-        YOU MUST RETURN YOUR RESPONSE AS A VALID, RAW JSON OBJECT. Do not include markdown formatting like ```json. Just return the JSON starting with {{ and ending with }}.
-        
-        Use exactly these keys:
-        "title": "A highly-searchable, 80-character max SEO title",
-        "pricing": "Quick Sale: $... | Fair Market: $... | Max Profit: $...",
-        "ebay": "A detailed, bulleted description focusing on exact item specifics, condition grading, and professionalism. DO NOT INCLUDE THE TITLE HERE.",
-        "facebook": "A conversational, urgent, and friendly description with local pickup placeholders. DO NOT INCLUDE THE TITLE HERE.",
-        "poshmark": "A trendy, stylish description utilizing relevant emojis and hashtags. DO NOT INCLUDE THE TITLE HERE.",
-        "condition": "A strict assessment of visible condition and flaws.",
-        "tags": "A comma-separated list of 15 high-volume search keywords."
-        """
-        
         response = gemini_client.models.generate_content(
-            model='gemini-3.8-flash',
+            model='gemini-2.5-flash',
             contents=[
-                prompt,
-                types.Part.from_bytes(data=image_data, mime_type=image.content_type)
+                types.Part.from_bytes(
+                    data=image_bytes,
+                    mime_type=image.content_type or "image/jpeg",
+                ),
+                prompt
             ]
         )
+
+        raw_text = response.text.strip()
         
-        if not is_pro:
-            supabase.table("profiles").update({"generation_count": generation_count + 1}).eq("id", user_id).execute()
-        
-        return JSONResponse(content={"result": response.text})
-        
+        # Clean markdown code blocks if the AI included them despite instructions
+        if raw_text.startswith("```"):
+            raw_text = raw_text.replace("```json", "").replace("```", "").strip()
+
+        # Parse and re-serialize to guarantee valid JSON structure
+        try:
+            parsed_json = json.loads(raw_text)
+        except json.JSONDecodeError:
+            # Fallback wrapper if model output was slightly malformed
+            parsed_json = {
+                "title": "Marketplace Listing",
+                "pricing": "$25.00",
+                "condition": "Good pre-owned condition.",
+                "ebay": raw_text,
+                "facebook": raw_text,
+                "poshmark": raw_text,
+                "tags": "#marketplace #resale"
+            }
+
+        return JSONResponse(content={"result": parsed_json})
+
     except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
-@app.post("/api/checkout")
-async def create_checkout_session(request: Request):
-    try:
-        stripe_key = os.getenv("STRIPE_SECRET_KEY")
-        if not stripe_key:
-            raise Exception("STRIPE_SECRET_KEY IS EMPTY IN RENDER")
-            
-        stripe.api_key = stripe_key.strip()
-        
-        data = await request.json()
-        user_id = data.get("user_id", "guest")
-
-        origin = request.headers.get("origin") or "[https://snaplist-1xq3.onrender.com](https://snaplist-1xq3.onrender.com)"
-        clean_url = origin.rstrip("/") + "/"
-
-        session = stripe.checkout.Session.create(
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': 'SimpleList Pro',
-                        'tax_code': 'txcd_10000000' 
-                    },
-                    'unit_amount': 999,
-                    'tax_behavior': 'exclusive',
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            allow_promotion_codes=False,
-            success_url=clean_url,
-            cancel_url=clean_url,
-            client_reference_id=user_id
-        )
-        return {"url": session.url}
-    except Exception as e:
-        error_msg = str(e)
-        if "Request req_" in error_msg:
-            error_msg = error_msg.split(": ", 1)[-1]
-        print("Checkout Route Error:", error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
-
-@app.post("/api/webhook/stripe")
-async def stripe_webhook(request: Request):
-    payload = await request.body()
-    sig_header = request.headers.get("stripe-signature")
-    webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
-
-    if not webhook_secret:
-        raise HTTPException(status_code=500, detail="Webhook secret missing.")
-
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, webhook_secret.strip()
-        )
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid payload")
-    except stripe.error.SignatureVerificationError:
-        raise HTTPException(status_code=400, detail="Invalid signature")
-
-    # FIX: Reading the Stripe Object directly instead of treating it like a dictionary
-    if event.type == "checkout.session.completed":
-        session = event.data.object
-        user_id = getattr(session, 'client_reference_id', None)
-
-        supabase = get_supabase()
-        if user_id and user_id != "guest" and supabase:
-            try:
-                supabase.table("profiles").update({"is_pro": True}).eq("id", user_id).execute()
-            except Exception as db_error:
-                print("Supabase update error:", db_error)
-
-    return {"status": "success"}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=10000)
