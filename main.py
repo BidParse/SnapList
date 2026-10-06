@@ -31,10 +31,10 @@ async def generate_listing(
             f"Analyze this item for an online marketplace listing under category: {category}. "
             "If this is a trading card, collectible, or graded item, perform an expert optical grading inspection "
             "analyzing centering, corners, edges, and surface condition to estimate a professional grade "
-            "(e.g., Raw, PSA 7, PSA 8, PSA 9, PSA 10 Gem Mint) with a detailed condition breakdown and grade-based pricing tiers. "
+            "(e.g., Raw, PSA 7, PSA 8, PSA 9, PSA 10 Gem Mint). "
             "You must return ONLY a valid JSON object with exactly these keys: "
             "title, pricing, condition, ebay, facebook, offerup, poshmark, mercari, depop, vinted, etsy, tags. "
-            "Ensure 'pricing' contains grade-based price tiers (e.g., Raw: $X | PSA 9: $Y | PSA 10: $Z). "
+            "Ensure 'pricing' contains both professional grade-based valuation tiers (Raw vs Graded) AND specific realistic selling price ranges tailored for each platform. "
             "Do not include any markdown formatting like ```json or ```, just return the raw JSON string."
         )
 
@@ -62,7 +62,7 @@ async def generate_listing(
         except Exception:
             parsed_json = {
                 "title": f"Marketplace Listing - {category}",
-                "pricing": "Raw: $20.00 | PSA 9: $60.00 | PSA 10: $150.00",
+                "pricing": "Raw Value: $15-$25 | PSA 9: $50-$70 | PSA 10: $130-$160",
                 "condition": "Expert Grade Estimate: PSA 9 (Near Mint-Mint) - Surface and corners inspected.",
                 "ebay": raw_text,
                 "facebook": raw_text,
