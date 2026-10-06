@@ -29,12 +29,14 @@ async def generate_listing(
         
         prompt = (
             f"Analyze this item for an online marketplace listing under category: {category}. "
-            "If this is a trading card or collectible, perform an expert optical grading inspection "
-            "analyzing centering, corners, edges, and surface condition to estimate a professional grade "
-            "(Raw, PSA 7, PSA 8, PSA 9, PSA 10) with specific valuation tiers and realistic selling price ranges for each platform. "
-            "You must return ONLY a valid JSON object with EXACTLY these string values for keys: "
+            "If this is a trading card, collectible, or graded item, perform an expert optical grading inspection "
+            "analyzing centering, corners, edges, and surface condition. "
+            "You must provide specific valuation price ranges across ALL of these exact tiers: "
+            "Raw, Grade 7, Grade 8, Grade 9, Grade 10, and Gold Star 10. "
+            "You must return ONLY a valid JSON object with exactly these keys: "
             "title, pricing, condition, ebay, facebook, offerup, poshmark, mercari, depop, vinted, etsy, tags. "
-            "Do not nest objects. Every value must be a plain text string. "
+            "Ensure 'pricing' clearly lays out Raw, Grade 7, Grade 8, Grade 9, Grade 10, and Gold Star 10 values. "
+            "Ensure each platform description includes its own targeted realistic selling price range reflecting platform fees and buyer behavior. "
             "Do not include any markdown formatting like ```json or ```, just return the raw JSON string."
         )
 
@@ -60,7 +62,6 @@ async def generate_listing(
             else:
                 parsed_json = json.loads(raw_text)
             
-            # Ensure all values are strings to prevent [object Object] rendering
             for k, v in parsed_json.items():
                 if isinstance(v, dict):
                     parsed_json[k] = json.dumps(v)
@@ -70,8 +71,8 @@ async def generate_listing(
         except Exception:
             parsed_json = {
                 "title": f"Marketplace Listing - {category}",
-                "pricing": "Raw: $15-$25 | PSA 9: $50-$70 | PSA 10: $130-$160",
-                "condition": "Expert Grade Estimate: PSA 9 (Near Mint-Mint)",
+                "pricing": "Raw: $5-$10 | G7: $15-$20 | G8: $25-$35 | G9: $50-$70 | G10: $120-$150 | Gold Star 10: $250+",
+                "condition": "Expert Grade Inspection Completed across centering, corners, edges, and surface.",
                 "ebay": raw_text,
                 "facebook": raw_text,
                 "offerup": raw_text,
