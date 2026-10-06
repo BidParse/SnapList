@@ -226,9 +226,9 @@
         async function handleLogin() {
             const messageEl = document.getElementById('auth-message');
             try {
-                if (!supabaseClient) throw new Error("Database connection blocked.");
+                if (!supabaseClient) throw new Error("Database connection blocked by browser.");
                 
-                const email = document.getElementById('email').value.trim();
+                const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 
                 if (!email || !password) {
@@ -243,14 +243,18 @@
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 
                 if (error) {
-                    messageEl.innerText = error.message.toUpperCase();
+                    let errorMsg = error.message.toUpperCase();
+                    if (errorMsg.includes("INVALID")) {
+                        errorMsg = "INCORRECT EMAIL OR PASSWORD.\n\nHINT: MUST BE 6+ CHARACTERS.";
+                    }
+                    messageEl.innerText = errorMsg;
                     messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
                 } else {
                     messageEl.innerText = "";
                     handleCheckUser();
                 }
             } catch (err) {
-                messageEl.innerText = "NETWORK ERROR. TRY AGAIN.";
+                messageEl.innerText = "ERROR: " + err.message;
                 messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
             }
         }
@@ -481,6 +485,7 @@
                 return;
             }
             
+            // Prevent double-clicking crashes
             generateBtn.disabled = true;
             generateBtn.innerText = "GENERATING...";
             
