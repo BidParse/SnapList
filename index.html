@@ -15,13 +15,14 @@
         
         <div class="text-center mb-8">
             <h1 class="text-5xl sm:text-6xl font-black tracking-wide mb-4"><span class="text-purple-600">Simple</span><span class="text-white">List</span></h1>
-            <p class="text-xs text-[#C0C0C0] tracking-widest uppercase">AI Marketplace Generator & Card Grader</p>
+            <p class="text-xs text-[#C0C0C0] tracking-widest uppercase">AI Marketplace Generator & Inventory Hub</p>
         </div>
 
         <div id="main-nav" class="hidden flex gap-2 mb-8 p-1 bg-black border border-purple-900/50 rounded-md">
-            <button onclick="showSection('generator-section')" id="tab-generator" class="flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors">Generator</button>
-            <button onclick="showSection('profile-section')" id="tab-profile" class="flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors">My Profile</button>
-            <button onclick="handleLogout()" class="flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-red-900/30 text-red-400 transition-colors">Logout</button>
+            <button onclick="showSection('generator-section')" id="tab-generator" class="flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors">Generator</button>
+            <button onclick="showSection('inventory-section')" id="tab-inventory" class="flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors">Listings Hub</button>
+            <button onclick="showSection('profile-section')" id="tab-profile" class="flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors">Profile</button>
+            <button onclick="handleLogout()" class="py-3 px-3 text-xs font-bold uppercase tracking-wider rounded hover:bg-red-900/30 text-red-400 transition-colors">Out</button>
         </div>
 
         <div id="auth-section" class="mb-8 pb-8 text-center">
@@ -66,12 +67,15 @@
                     <button onclick="handleSaveProfile()" class="bg-purple-900 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-purple-700 w-full transition-colors border border-purple-700">Save Profile</button>
                 </div>
             </div>
+        </div>
 
-            <div class="p-6 bg-[#0a0a0a] border border-gray-800 rounded-md">
-                <h4 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-4">Update Password</h4>
-                <input type="password" id="internal-new-password" placeholder="New Password" class="bg-black border border-gray-700 text-white p-3 w-full mb-3 rounded-md focus:outline-none focus:border-purple-500 text-sm">
-                <button onclick="handleInternalPasswordUpdate()" class="bg-gray-800 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-gray-700 w-full transition-colors border border-gray-600">Change Password</button>
-                <p id="profile-message" class="mt-3 text-xs text-center font-bold"></p>
+        <!-- INVENTORY & ACTIVE LISTINGS HUB -->
+        <div id="inventory-section" class="hidden">
+            <h3 class="text-xl font-black text-purple-400 uppercase tracking-wider mb-4">Active Cross-List Hub</h3>
+            <p class="text-xs text-gray-400 mb-6">Track your generated items and select which platforms they are actively posted on.</p>
+            
+            <div id="inventory-list" class="space-y-4">
+                <p class="text-sm text-gray-500 text-center py-8">No saved listings yet. Generate an item to add it here!</p>
             </div>
         </div>
 
@@ -109,7 +113,10 @@
                     <h4 class="text-xs text-purple-400 font-bold uppercase tracking-widest mb-2">Title & Grade Pricing Tiers</h4>
                     <p id="out-title" class="font-bold text-lg mb-2 text-white"></p>
                     <p id="out-pricing" class="text-sm text-green-400 font-mono font-bold"></p>
-                    <button onclick="copySpecific('out-title', this)" class="mt-4 bg-purple-900 text-white px-3 py-2 rounded text-xs font-bold uppercase w-full transition-colors">Copy Title</button>
+                    <div class="flex gap-2 mt-4">
+                        <button onclick="copySpecific('out-title', this)" class="bg-purple-900 text-white px-3 py-2 rounded text-xs font-bold uppercase flex-1 transition-colors">Copy Title</button>
+                        <button onclick="saveCurrentToListings()" class="bg-green-600 text-white px-3 py-2 rounded text-xs font-bold uppercase flex-1 transition-colors hover:bg-green-500">💾 Save to Hub</button>
+                    </div>
                 </div>
 
                 <div class="p-6 border border-gray-700 bg-[#0a0a0a] rounded-md">
@@ -141,6 +148,7 @@
     <script>
         let supabaseClient = null;
         let currentUser = null;
+        let lastGeneratedItem = null;
 
         try {
             const SUPABASE_URL = 'https://wzmaaahyovsroeyjsmst.supabase.co';
@@ -153,19 +161,30 @@
         }
 
         function showSection(sectionId) {
-            document.getElementById('generator-section').classList.add('hidden');
-            document.getElementById('profile-section').classList.add('hidden');
+            ['generator-section', 'profile-section', 'inventory-section'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
             
-            document.getElementById('tab-generator').className = 'flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors';
-            document.getElementById('tab-profile').className = 'flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors';
+            ['tab-generator', 'tab-inventory', 'tab-profile'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.className = 'flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded hover:bg-purple-900/30 text-gray-400 transition-colors';
+            });
             
             if (sectionId === 'generator-section') {
-                document.getElementById('tab-generator').className = 'flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors';
+                const btn = document.getElementById('tab-generator');
+                if (btn) btn.className = 'flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors';
+            } else if (sectionId === 'inventory-section') {
+                const btn = document.getElementById('tab-inventory');
+                if (btn) btn.className = 'flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors';
+                loadUserInventory();
             } else {
-                document.getElementById('tab-profile').className = 'flex-1 py-3 text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors';
+                const btn = document.getElementById('tab-profile');
+                if (btn) btn.className = 'flex-1 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider rounded bg-purple-900/50 text-white transition-colors';
             }
 
-            document.getElementById(sectionId).classList.remove('hidden');
+            const target = document.getElementById(sectionId);
+            if (target) target.classList.remove('hidden');
         }
 
         async function handleCheckUser() {
@@ -173,11 +192,12 @@
 
             const urlStr = window.location.href;
             if (urlStr.includes('reset=true') || urlStr.includes('type=recovery') || urlStr.includes('access_token')) {
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('main-nav').classList.add('hidden');
-                document.getElementById('generator-section').classList.add('hidden');
-                document.getElementById('profile-section').classList.add('hidden');
-                document.getElementById('recovery-section').classList.remove('hidden');
+                ['auth-section', 'main-nav', 'generator-section', 'profile-section', 'inventory-section'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.add('hidden');
+                });
+                const rec = document.getElementById('recovery-section');
+                if (rec) rec.classList.remove('hidden');
                 return; 
             }
 
@@ -186,10 +206,15 @@
                 if (session) {
                     currentUser = session.user;
                     
-                    document.getElementById('profile-email-display').innerText = currentUser.email;
-                    document.getElementById('profile-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.email}&backgroundColor=222222`;
+                    const emailDisplay = document.getElementById('profile-email-display');
+                    if (emailDisplay) emailDisplay.innerText = currentUser.email;
+                    
+                    const avatar = document.getElementById('profile-avatar');
+                    if (avatar) avatar.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.email}&backgroundColor=222222`;
+                    
                     if (currentUser.user_metadata && currentUser.user_metadata.bio) {
-                        document.getElementById('profile-bio').value = currentUser.user_metadata.bio;
+                        const bio = document.getElementById('profile-bio');
+                        if (bio) bio.value = currentUser.user_metadata.bio;
                     }
 
                     try {
@@ -197,26 +222,36 @@
                         if (profileData && profileData.is_pro) {
                             const checkoutBtn = document.getElementById('checkout-btn');
                             if (checkoutBtn) checkoutBtn.style.display = 'none';
-                            document.getElementById('pro-status-text').innerText = "✅ PRO ACTIVE — UNLIMITED GRADING";
-                            document.getElementById('pro-status-text').className = "text-sm text-green-400 font-bold uppercase tracking-wider mt-1";
+                            const statusText = document.getElementById('pro-status-text');
+                            if (statusText) {
+                                statusText.innerText = "✅ PRO ACTIVE — UNLIMITED GRADING & HUB";
+                                statusText.className = "text-sm text-green-400 font-bold uppercase tracking-wider mt-1";
+                            }
                         }
                     } catch (e) {
                         console.log("Profile data check skipped.");
                     }
 
-                    document.getElementById('auth-section').classList.add('hidden');
-                    document.getElementById('recovery-section').classList.add('hidden');
-                    document.getElementById('main-nav').classList.remove('hidden');
-                    document.getElementById('main-nav').classList.add('flex');
+                    ['auth-section', 'recovery-section'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.classList.add('hidden');
+                    });
+                    
+                    const nav = document.getElementById('main-nav');
+                    if (nav) {
+                        nav.classList.remove('hidden');
+                        nav.classList.add('flex');
+                    }
                     
                     showSection('generator-section'); 
                 } else {
                     currentUser = null;
-                    document.getElementById('main-nav').classList.add('hidden');
-                    document.getElementById('generator-section').classList.add('hidden');
-                    document.getElementById('profile-section').classList.add('hidden');
-                    document.getElementById('recovery-section').classList.add('hidden');
-                    document.getElementById('auth-section').classList.remove('hidden');
+                    ['main-nav', 'generator-section', 'profile-section', 'inventory-section', 'recovery-section'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.classList.add('hidden');
+                    });
+                    const auth = document.getElementById('auth-section');
+                    if (auth) auth.classList.remove('hidden');
                 }
             } catch (err) {
                 console.error("Session check failed", err);
@@ -227,7 +262,6 @@
             const messageEl = document.getElementById('auth-message');
             try {
                 if (!supabaseClient) throw new Error("Database connection blocked by browser.");
-                
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 
@@ -243,11 +277,7 @@
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 
                 if (error) {
-                    let errorMsg = error.message.toUpperCase();
-                    if (errorMsg.includes("INVALID")) {
-                        errorMsg = "INCORRECT EMAIL OR PASSWORD.\n\nHINT: MUST BE 6+ CHARACTERS.";
-                    }
-                    messageEl.innerText = errorMsg;
+                    messageEl.innerText = error.message.toUpperCase();
                     messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
                 } else {
                     messageEl.innerText = "SUCCESS! LOADING DASHBOARD...";
@@ -264,7 +294,6 @@
             const messageEl = document.getElementById('auth-message');
             try {
                 if (!supabaseClient) throw new Error("Database connection blocked by browser.");
-                
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 
@@ -296,15 +325,12 @@
             const messageEl = document.getElementById('auth-message');
             try {
                 if (!supabaseClient) throw new Error("Database connection blocked by browser.");
-                
                 const email = document.getElementById('email').value;
-                
                 if (!email) {
                     messageEl.innerText = "PLEASE ENTER EMAIL ABOVE.";
                     messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
                     return;
                 }
-                
                 messageEl.innerText = "SENDING LINK...";
                 messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
                 
@@ -328,21 +354,16 @@
         async function handleUpdatePassword() {
             const messageEl = document.getElementById('recovery-message');
             try {
-                if (!supabaseClient) throw new Error("Database connection error.");
-                
                 const newPassword = document.getElementById('new-password').value;
-                
                 if (newPassword.length < 6) {
                     messageEl.innerText = "MUST BE 6+ CHARACTERS.";
                     messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
                     return;
                 }
-                
                 messageEl.innerText = "UPDATING...";
                 messageEl.className = "mt-5 text-sm font-bold text-purple-400 whitespace-pre-wrap";
                 
                 const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
-                
                 if (error) {
                     messageEl.innerText = "ERROR: " + error.message.toUpperCase();
                     messageEl.className = "mt-5 text-sm font-bold text-red-500 whitespace-pre-wrap";
@@ -362,52 +383,14 @@
             try {
                 const bioText = document.getElementById('profile-bio').value;
                 const originalText = btn.innerText;
-                
                 btn.innerText = "SAVING...";
-                const { data, error } = await supabaseClient.auth.updateUser({
-                    data: { bio: bioText }
-                });
-                
+                const { error } = await supabaseClient.auth.updateUser({ data: { bio: bioText } });
                 if (!error) {
-                    btn.className = "bg-green-600 text-white px-4 py-2 rounded text-xs font-bold uppercase w-full transition-colors border border-green-500";
                     btn.innerText = "SAVED!";
-                    setTimeout(() => {
-                        btn.className = "bg-purple-900 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-purple-700 w-full transition-colors border border-purple-700";
-                        btn.innerText = originalText;
-                    }, 2000);
+                    setTimeout(() => btn.innerText = originalText, 2000);
                 }
             } catch (err) {
-                btn.innerText = "ERROR SAVING";
-            }
-        }
-
-        async function handleInternalPasswordUpdate() {
-            const msgEl = document.getElementById('profile-message');
-            try {
-                const newPass = document.getElementById('internal-new-password').value;
-                
-                if (newPass.length < 6) {
-                    msgEl.innerText = "MUST BE AT LEAST 6 CHARACTERS.";
-                    msgEl.className = "mt-3 text-xs text-center font-bold text-red-500";
-                    return;
-                }
-                
-                msgEl.innerText = "UPDATING...";
-                msgEl.className = "mt-3 text-xs text-center font-bold text-purple-400";
-                
-                const { error } = await supabaseClient.auth.updateUser({ password: newPass });
-                
-                if (error) {
-                    msgEl.innerText = "ERROR: " + error.message;
-                    msgEl.className = "mt-3 text-xs text-center font-bold text-red-500";
-                } else {
-                    msgEl.innerText = "PASSWORD SUCCESSFULLY CHANGED!";
-                    msgEl.className = "mt-3 text-xs text-center font-bold text-green-400";
-                    document.getElementById('internal-new-password').value = '';
-                }
-            } catch (err) {
-                msgEl.innerText = "ERROR: " + err.message;
-                msgEl.className = "mt-3 text-xs text-center font-bold text-red-500";
+                btn.innerText = "ERROR";
             }
         }
 
@@ -422,14 +405,8 @@
 
         async function handleCheckout(event) {
             if (!currentUser) return;
-            
             const btn = event.target;
-            const originalText = btn.innerText;
-            const originalClass = btn.className;
-            
             btn.innerText = "LOADING...";
-            btn.className = "bg-yellow-500 text-black px-6 py-3 rounded-md font-black uppercase tracking-wider whitespace-nowrap";
-            
             try {
                 const response = await fetch('/api/checkout', {
                     method: 'POST',
@@ -437,20 +414,9 @@
                     body: JSON.stringify({ user_id: currentUser.id })
                 });
                 const data = await response.json();
-                
-                if (data.url) {
-                    window.location.href = data.url; 
-                } else {
-                    const errorMessage = data.detail || "UNKNOWN ERROR";
-                    btn.innerText = "ERROR: " + errorMessage.toUpperCase();
-                    btn.className = "bg-red-600 text-white px-6 py-3 rounded-md font-bold uppercase tracking-wide whitespace-nowrap shadow-[0_0_15px_rgba(255,0,0,0.5)] text-xs";
-                    
-                    setTimeout(() => { btn.innerText = originalText; btn.className = originalClass; }, 5000);
-                }
+                if (data.url) window.location.href = data.url; 
             } catch (err) { 
-                btn.innerText = "SERVER CRASH";
-                btn.className = "bg-red-600 text-white px-6 py-3 rounded-md font-black uppercase tracking-wider whitespace-nowrap shadow-[0_0_15px_rgba(255,0,0,0.5)]";
-                setTimeout(() => { btn.innerText = originalText; btn.className = originalClass; }, 3000);
+                btn.innerText = "ERROR";
             }
         }
 
@@ -466,10 +432,9 @@
 
         function copySpecific(id, btn) {
             navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => {
-                const orig = btn.innerHTML, cls = btn.className;
+                const orig = btn.innerHTML;
                 btn.innerHTML = '✅ COPIED!';
-                btn.className = 'bg-green-500 text-white px-3 py-3 rounded text-sm font-bold uppercase w-full transition-colors';
-                setTimeout(() => { btn.innerHTML = orig; btn.className = cls; }, 2000);
+                setTimeout(() => btn.innerHTML = orig, 2000);
             });
         }
 
@@ -496,7 +461,7 @@
             
             stat.classList.remove('hidden'); 
             res.classList.add('hidden');
-            stat.innerText = "PERFORMING OPTICAL CENTERING & SURFACE GRADING... 🔍"; 
+            stat.innerText = "PERFORMING EXPERT GRADING & PRICING... 🔍"; 
             stat.className = "mt-8 p-6 border border-purple-800 rounded-md bg-black text-purple-400 font-bold font-mono text-sm shadow-inner text-center";
             
             try {
@@ -504,33 +469,99 @@
                 const data = await response.json();
                 
                 if (data.result) {
-                    try {
-                        let parsed = data.result;
-                        
-                        ['title', 'pricing', 'condition', 'ebay', 'facebook', 'poshmark'].forEach(k => {
-                            const el = document.getElementById('out-' + k);
-                            if (el) el.innerText = parsed[k] || "N/A";
-                        });
-                        
-                        stat.classList.add('hidden'); 
-                        res.classList.remove('hidden'); 
-                        res.classList.add('flex');
-                    } catch (e) { 
-                        console.error("Parse Error: ", e, data.result);
-                        stat.innerText = "🚨 Formatting error. Please hit 'Analyze & Grade' again!"; 
-                        stat.className = "mt-8 p-6 bg-[#1a0505] text-red-400 font-bold font-mono text-sm border border-red-800 rounded-md text-center shadow-[0_0_15px_rgba(255,0,0,0.2)]"; 
-                    }
+                    let parsed = data.result;
+                    lastGeneratedItem = parsed; // Store for hub saving
+                    
+                    ['title', 'pricing', 'condition', 'ebay', 'facebook', 'poshmark'].forEach(k => {
+                        const el = document.getElementById('out-' + k);
+                        if (el) el.innerText = parsed[k] || "N/A";
+                    });
+                    
+                    stat.classList.add('hidden'); 
+                    res.classList.remove('hidden'); 
+                    res.classList.add('flex');
                 } else { 
                     stat.innerText = "🚨 " + data.error;
-                    stat.className = "mt-8 p-6 bg-[#1a0505] text-red-400 font-bold font-mono text-sm border border-red-800 rounded-md text-center shadow-[0_0_15px_rgba(255,0,0,0.2)]"; 
                 }
             } catch (e) { 
                 stat.innerText = "CONNECTION ERROR."; 
-                stat.className = "mt-8 p-6 bg-[#1a0505] text-red-400 font-bold font-mono text-sm border border-red-800 rounded-md text-center shadow-[0_0_15px_rgba(255,0,0,0.2)]";
             } finally {
                 generateBtn.disabled = false;
                 generateBtn.innerText = "Analyze & Grade Item";
             }
+        }
+
+        // --- LOCAL STORAGE / CROSS-LIST HUB FUNCTIONS ---
+        function saveCurrentToListings() {
+            if (!lastGeneratedItem) {
+                alert("No generated item to save!");
+                return;
+            }
+            
+            let savedItems = JSON.parse(localStorage.getItem('simplelist_inventory') || '[]');
+            
+            const newItem = {
+                id: Date.now(),
+                title: lastGeneratedItem.title || "Untitled Item",
+                pricing: lastGeneratedItem.pricing || "N/A",
+                condition: lastGeneratedItem.condition || "N/A",
+                platforms: { ebay: false, facebook: false, poshmark: false }
+            };
+            
+            savedItems.unshift(newItem);
+            localStorage.setItem('simplelist_inventory', JSON.stringify(savedItems));
+            alert("💾 Saved to your Active Cross-List Hub!");
+            showSection('inventory-section');
+        }
+
+        function loadUserInventory() {
+            const container = document.getElementById('inventory-list');
+            let savedItems = JSON.parse(localStorage.getItem('simplelist_inventory') || '[]');
+            
+            if (savedItems.length === 0) {
+                container.innerHTML = `<p class="text-sm text-gray-500 text-center py-8">No saved listings yet. Generate an item and click 'Save to Hub'!</p>`;
+                return;
+            }
+            
+            let html = '';
+            savedItems.forEach(item => {
+                html += `
+                    <div class="p-4 bg-black border border-purple-800 rounded-md space-y-3">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-white text-sm">${item.title}</h4>
+                            <button onclick="deleteInventoryItem(${item.id})" class="text-xs text-red-400 hover:text-red-300 font-bold uppercase">Delete</button>
+                        </div>
+                        <p class="text-xs text-green-400 font-mono"><b>Pricing:</b> ${item.pricing}</p>
+                        <p class="text-xs text-gray-300"><b>Condition/Grade:</b> ${item.condition}</p>
+                        
+                        <div class="pt-2 border-t border-purple-900/50 flex flex-wrap gap-2 items-center justify-between text-xs">
+                            <span class="text-gray-400 uppercase font-bold">Listed On:</span>
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.ebay ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'ebay')"> eBay</label>
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.facebook ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'facebook')"> Facebook</label>
+                            <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" ${item.platforms.poshmark ? 'checked' : ''} onchange="togglePlatform(${item.id}, 'poshmark')"> Poshmark</label>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function togglePlatform(id, platform) {
+            let savedItems = JSON.parse(localStorage.getItem('simplelist_inventory') || '[]');
+            savedItems = savedItems.map(item => {
+                if (item.id === id) {
+                    item.platforms[platform] = !item.platforms[platform];
+                }
+                return item;
+            });
+            localStorage.setItem('simplelist_inventory', JSON.stringify(savedItems));
+        }
+
+        function deleteInventoryItem(id) {
+            let savedItems = JSON.parse(localStorage.getItem('simplelist_inventory') || '[]');
+            savedItems = savedItems.filter(item => item.id !== id);
+            localStorage.setItem('simplelist_inventory', JSON.stringify(savedItems));
+            loadUserInventory();
         }
 
         handleCheckUser();
