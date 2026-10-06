@@ -7,7 +7,6 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>SimpleList</title>
-    <!-- Replaced blocking script CDN with stable stylesheet CDN -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -510,25 +509,13 @@
                 
                 if (data.result) {
                     try {
-                        let parsed;
-                        if (typeof data.result === 'object') {
-                            parsed = data.result;
-                        } else {
-                            let rawText = String(data.result);
-                            let cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-                            
-                            let jsonStart = cleanText.indexOf('{');
-                            let jsonEnd = cleanText.lastIndexOf('}');
-                            
-                            if (jsonStart === -1 || jsonEnd === -1) throw new Error("No structured data found.");
-                            
-                            let cleanJson = cleanText.substring(jsonStart, jsonEnd + 1);
-                            parsed = JSON.parse(cleanJson);
-                        }
+                        let parsed = data.result;
                         
-                        ['title', 'pricing', 'condition', 'ebay', 'facebook', 'poshmark', 'tags'].forEach(k => 
-                            document.getElementById('out-'+k).innerText = parsed[k] || "N/A"
-                        );
+                        // Safely populate available DOM elements without throwing errors
+                        ['title', 'pricing', 'condition', 'ebay', 'facebook', 'poshmark'].forEach(k => {
+                            const el = document.getElementById('out-' + k);
+                            if (el) el.innerText = parsed[k] || "N/A";
+                        });
                         
                         stat.classList.add('hidden'); 
                         res.classList.remove('hidden'); 
