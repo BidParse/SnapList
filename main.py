@@ -29,14 +29,16 @@ async def generate_listing(
         
         prompt = (
             f"Analyze this item for an online marketplace listing under category: {category}. "
-            "If this is a trading card, collectible, or graded item, perform an expert optical grading inspection "
+            "If this is a trading card or collectible, perform an expert optical grading inspection "
             "analyzing centering, corners, edges, and surface condition. "
             "You must provide specific valuation price ranges across ALL of these exact tiers: "
             "Raw, Grade 7, Grade 8, Grade 9, Grade 10, and Gold Star 10. "
+            "CRITICAL FORMATTING INSTRUCTION FOR 'pricing': Do NOT return JSON formatting, brackets, or quotation marks. "
+            "Return 'pricing' as a clean, simple text block formatted like this example:\n"
+            "Raw: $X - $Y | Grade 7: $X - $Y | Grade 8: $X - $Y | Grade 9: $X - $Y | Grade 10: $X - $Y | Gold Star 10: $X - $Y\n"
+            "Ensure all platform pricing (including Vinted) uses USD ($) currency ranges tailored to each marketplace. "
             "You must return ONLY a valid JSON object with exactly these keys: "
             "title, pricing, condition, ebay, facebook, offerup, poshmark, mercari, depop, vinted, etsy, tags. "
-            "Ensure 'pricing' clearly lays out Raw, Grade 7, Grade 8, Grade 9, Grade 10, and Gold Star 10 values. "
-            "Ensure each platform description includes its own targeted realistic selling price range reflecting platform fees and buyer behavior. "
             "Do not include any markdown formatting like ```json or ```, just return the raw JSON string."
         )
 
@@ -62,17 +64,22 @@ async def generate_listing(
             else:
                 parsed_json = json.loads(raw_text)
             
+            # Sanitize pricing if it accidentally parsed as a dict object
+            if isinstance(parsed_json.get("pricing"), dict):
+                p_dict = parsed_json["pricing"]
+                parsed_json["pricing"] = " | ".join([f"{k}: {v}" for k, v in p_dict.items()])
+
             for k, v in parsed_json.items():
                 if isinstance(v, dict):
-                    parsed_json[k] = json.dumps(v)
+                    parsed_json[k] = " | ".join([f"{sub_k}: {sub_v}" for sub_k, sub_v in v.items()])
                 elif not isinstance(v, str):
                     parsed_json[k] = str(v)
 
         except Exception:
             parsed_json = {
                 "title": f"Marketplace Listing - {category}",
-                "pricing": "Raw: $5-$10 | G7: $15-$20 | G8: $25-$35 | G9: $50-$70 | G10: $120-$150 | Gold Star 10: $250+",
-                "condition": "Expert Grade Inspection Completed across centering, corners, edges, and surface.",
+                "pricing": "Raw: $2.00 - $4.00 | Grade 7: $6.00 - $10.00 | Grade 8: $10.00 - $15.00 | Grade 9: $15.00 - $22.00 | Grade 10: $35.00 - $50.00 | Gold Star 10: $65.00 - $95.00",
+                "condition": "Expert Grade Inspection Completed.",
                 "ebay": raw_text,
                 "facebook": raw_text,
                 "offerup": raw_text,
