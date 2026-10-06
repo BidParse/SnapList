@@ -31,12 +31,9 @@ async def generate_listing(
             f"Analyze this item for an online marketplace listing under category: {category}. "
             "If this is a trading card or collectible, perform an expert optical grading inspection "
             "analyzing centering, corners, edges, and surface condition. "
-            "You must provide specific valuation price ranges across ALL of these exact tiers: "
-            "Raw, Grade 7, Grade 8, Grade 9, Grade 10, and Gold Star 10. "
-            "CRITICAL FORMATTING INSTRUCTION FOR 'pricing': Do NOT return JSON formatting, brackets, or quotation marks. "
-            "Return 'pricing' as a clean, simple text block formatted like this example:\n"
-            "Raw: $X - $Y | Grade 7: $X - $Y | Grade 8: $X - $Y | Grade 9: $X - $Y | Grade 10: $X - $Y | Gold Star 10: $X - $Y\n"
-            "Ensure all platform pricing (including Vinted) uses USD ($) currency ranges tailored to each marketplace. "
+            "1. For the 'pricing' key, return ONLY a clean text string formatted like this: "
+            "Raw: $X - $Y | Grade 7: $X - $Y | Grade 8: $X - $Y | Grade 9: $X - $Y | Grade 10: $X - $Y | Gold Star 10: $X - $Y. "
+            "2. For each platform key (ebay, facebook, offerup, poshmark, mercari, depop, vinted, etsy), provide a full, comprehensive sales description optimized for that specific marketplace, including a suggested listing price range suited for that platform's buyer demographic and fees. "
             "You must return ONLY a valid JSON object with exactly these keys: "
             "title, pricing, condition, ebay, facebook, offerup, poshmark, mercari, depop, vinted, etsy, tags. "
             "Do not include any markdown formatting like ```json or ```, just return the raw JSON string."
@@ -64,14 +61,14 @@ async def generate_listing(
             else:
                 parsed_json = json.loads(raw_text)
             
-            # Sanitize pricing if it accidentally parsed as a dict object
+            # Ensure pricing is a clean string
             if isinstance(parsed_json.get("pricing"), dict):
                 p_dict = parsed_json["pricing"]
                 parsed_json["pricing"] = " | ".join([f"{k}: {v}" for k, v in p_dict.items()])
 
             for k, v in parsed_json.items():
-                if isinstance(v, dict):
-                    parsed_json[k] = " | ".join([f"{sub_k}: {sub_v}" for sub_k, sub_v in v.items()])
+                if isinstance(v, dict) and k != "pricing":
+                    parsed_json[k] = " ".join([str(sub_v) for sub_v in v.values()])
                 elif not isinstance(v, str):
                     parsed_json[k] = str(v)
 
